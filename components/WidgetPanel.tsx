@@ -5,7 +5,7 @@ import { getDailyTerms, getFeaturedCompanies, getTopicCounts } from "@/lib/data"
 
 export function WidgetPanel() {
   const featured = getFeaturedCompanies();
-  const topics = getTopicCounts(1).slice(0, 5);
+  const tags = getTopicCounts(1).slice(0, 5);
   const trends = getTopicCounts(30).slice(0, 10);
   const terms = getDailyTerms();
 
@@ -32,13 +32,13 @@ export function WidgetPanel() {
 
       <section className="panel">
         <div className="panel-title">
-          <span>今日のトピック</span>
+          <span>今日のタグ</span>
         </div>
-        {topics.map((topic, index) => (
-          <div className="rank-item" key={topic.tag}>
+        {tags.map((tag, index) => (
+          <div className="rank-item" key={tag.tag}>
             <span className="rank-number">{index + 1}</span>
-            <strong>{topic.tag}</strong>
-            <span className="muted">{topic.count}件</span>
+            <strong>{tag.tag}</strong>
+            <span className="muted">{tag.count}件</span>
           </div>
         ))}
       </section>
@@ -62,13 +62,13 @@ export function WidgetPanel() {
 
       <section className="panel">
         <div className="panel-title">
-          <span>トレンドタグ</span>
+          <span>タグランキング</span>
         </div>
-        {trends.map((topic) => (
-          <div className="rank-item" key={topic.tag}>
+        {trends.map((tag) => (
+          <div className="rank-item" key={tag.tag}>
             <Flame size={18} color="#EF4444" aria-hidden />
-            <strong>{topic.tag}</strong>
-            <span className="muted">{topic.count * 18}件</span>
+            <strong>{tag.tag}</strong>
+            <span className="muted">{tag.count * 18}件</span>
           </div>
         ))}
       </section>

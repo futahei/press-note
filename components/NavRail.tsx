@@ -15,7 +15,7 @@ const navItems = [
 
 const placeholderItems = [
   { label: "アラート", icon: Bell },
-  { label: "トピック", icon: Tags },
+  { label: "タグ", icon: Tags },
   { label: "分析", icon: LineChart }
 ];
 

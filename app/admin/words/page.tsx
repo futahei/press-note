@@ -2,6 +2,7 @@ import Link from "next/link";
 import { BookOpenText, Pencil, Plus, Trash2 } from "lucide-react";
 import { NavRail } from "@/components/NavRail";
 import { getTermEntries } from "@/lib/data";
+import { tagVocabulary } from "@/lib/sample-data";
 
 export const metadata = {
   title: "単語帳管理"
@@ -45,7 +46,16 @@ export default function AdminWordsPage() {
           </label>
           <label className="field">
             <span>タグ</span>
-            <input placeholder="AI / 機械学習, クラウド / SaaS" />
+            <select multiple size={8} defaultValue={["AI / 機械学習"]} aria-describedby="word-tag-help">
+              {tagVocabulary.map((tag) => (
+                <option value={tag} key={tag}>
+                  {tag}
+                </option>
+              ))}
+            </select>
+            <small id="word-tag-help" className="muted">
+              固定タグ辞書から最大3件まで選択
+            </small>
           </label>
         </section>
 
@@ -94,4 +104,3 @@ export default function AdminWordsPage() {
     </div>
   );
 }
-

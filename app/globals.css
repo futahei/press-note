@@ -576,11 +576,27 @@ select {
 .field input,
 .field select,
 .field textarea {
-  min-height: 42px;
   border: 1px solid var(--border-subtle);
   border-radius: 8px;
   padding: 10px 12px;
   background: white;
+}
+
+.field input,
+.field textarea {
+  min-height: 42px;
+}
+
+.field select:not([multiple]) {
+  min-height: 42px;
+}
+
+.field select[multiple] {
+  min-height: 180px;
+}
+
+.field small {
+  font-size: 12px;
 }
 
 @media (max-width: 1180px) {

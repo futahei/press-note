@@ -18,7 +18,7 @@ describe("article data helpers", () => {
     expect(getDisplayDate(article!)).toContain("検知");
   });
 
-  it("sorts companies and topics by activity", () => {
+  it("sorts companies and tags by activity", () => {
     expect(getFeaturedCompanies()[0].count).toBeGreaterThanOrEqual(getFeaturedCompanies()[1].count);
     expect(getTopicCounts(30)[0].count).toBeGreaterThanOrEqual(getTopicCounts(30)[1].count);
     expect(getDailyTerms().length).toBeGreaterThan(0);
