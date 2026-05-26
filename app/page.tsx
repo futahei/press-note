@@ -64,17 +64,16 @@ export default async function Home({ searchParams }: HomeProps) {
             <ChevronLeft size={16} />
           </span>
           <span className="current">1</span>
-          <a href="/?page=2">2</a>
-          <a href="/?page=3">3</a>
+          <Link href="/?page=2">2</Link>
+          <Link href="/?page=3">3</Link>
           <span>...</span>
-          <a href="/?page=7">7</a>
-          <a href="/?page=2" aria-label="次のページ">
+          <Link href="/?page=7">7</Link>
+          <Link href="/?page=2" aria-label="次のページ">
             <ChevronRight size={16} />
-          </a>
+          </Link>
         </nav>
       </main>
       <WidgetPanel />
     </div>
   );
 }
-
