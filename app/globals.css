@@ -121,6 +121,11 @@ select {
   align-items: center;
 }
 
+.inline-list {
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
 .top-bar {
   position: sticky;
   top: 0;
@@ -428,6 +433,11 @@ select {
   gap: 20px;
 }
 
+.detail-article {
+  display: grid;
+  gap: 14px;
+}
+
 .detail-section,
 .admin-panel {
   padding: 22px;
@@ -575,4 +585,3 @@ select {
     grid-template-columns: 1fr;
   }
 }
-
