@@ -35,7 +35,6 @@ create table if not exists public.articles (
   detected_at timestamptz not null default now(),
   summary_short text,
   summary_long text,
-  terms jsonb not null default '[]'::jsonb,
   tags text[] not null default '{}',
   content_hash text,
   ai_processed_at timestamptz,
@@ -43,6 +42,24 @@ create table if not exists public.articles (
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now(),
   unique (source_id, source_item_id)
+);
+
+create table if not exists public.words (
+  id uuid primary key default gen_random_uuid(),
+  word text not null unique,
+  reading text,
+  meaning text not null,
+  tags text[] not null default '{}',
+  deleted_at timestamptz,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+
+create table if not exists public.article_words (
+  article_id uuid not null references public.articles(id) on delete cascade,
+  word_id uuid not null references public.words(id) on delete cascade,
+  created_at timestamptz not null default now(),
+  primary key (article_id, word_id)
 );
 
 create table if not exists public.push_subscriptions (
@@ -85,9 +102,14 @@ create index if not exists articles_visible_detected_idx
 create index if not exists sources_enabled_idx
   on public.sources (enabled, deleted_at);
 
+create index if not exists article_words_word_idx
+  on public.article_words (word_id, created_at desc);
+
 alter table public.companies enable row level security;
 alter table public.sources enable row level security;
 alter table public.articles enable row level security;
+alter table public.words enable row level security;
+alter table public.article_words enable row level security;
 alter table public.push_subscriptions enable row level security;
 alter table public.crawl_logs enable row level security;
 alter table public.admin_login_attempts enable row level security;
@@ -102,6 +124,14 @@ create policy "anon can read enabled sources"
 
 create policy "anon can read companies"
   on public.companies for select
+  using (true);
+
+create policy "anon can read active words"
+  on public.words for select
+  using (deleted_at is null);
+
+create policy "anon can read article words"
+  on public.article_words for select
   using (true);
 
 select cron.schedule(
@@ -139,4 +169,3 @@ select cron.schedule(
     headers := jsonb_build_object('X-Cron-Secret', current_setting('app.cron_secret', true))
   );$$
 );
-

@@ -8,7 +8,7 @@ import { useState } from "react";
 const navItems = [
   { href: "/", label: "ホーム", icon: Home, activeMatch: /^\/$/ },
   { href: "/companies", label: "企業一覧", icon: Building2, activeMatch: /^\/companies/ },
-  { href: "/terms", label: "用語集", icon: BookOpenText, activeMatch: /^\/terms/ },
+  { href: "/terms", label: "単語帳", icon: BookOpenText, activeMatch: /^\/terms/ },
   { href: "/admin", label: "管理", icon: Settings, activeMatch: /^\/admin/ },
   { href: "/about-bot", label: "ヘルプ", icon: CircleHelp, activeMatch: /^\/about-bot/ }
 ];

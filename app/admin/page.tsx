@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Activity, Bell, Database, Plus, WandSparkles } from "lucide-react";
+import { Activity, Bell, BookOpenText, Database, Plus, WandSparkles } from "lucide-react";
 import { NavRail } from "@/components/NavRail";
 import { getArticles, getSources } from "@/lib/data";
 
@@ -52,9 +52,14 @@ export default function AdminPage() {
         <section className="admin-panel">
           <div className="panel-title">
             <span>ソース状態</span>
-            <Link className="button" href="/admin/sources">
-              一覧を開く
-            </Link>
+            <div className="inline-list">
+              <Link className="button" href="/admin/words">
+                <BookOpenText size={17} /> 単語帳
+              </Link>
+              <Link className="button" href="/admin/sources">
+                一覧を開く
+              </Link>
+            </div>
           </div>
           <table className="table">
             <thead>
@@ -87,4 +92,3 @@ export default function AdminPage() {
     </div>
   );
 }
-

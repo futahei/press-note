@@ -6,7 +6,7 @@ import { WidgetPanel } from "@/components/WidgetPanel";
 import { getTermEntries } from "@/lib/data";
 
 export const metadata = {
-  title: "用語集"
+  title: "単語帳"
 };
 
 export default function TermsPage() {
@@ -19,27 +19,28 @@ export default function TermsPage() {
         <TopBar />
         <div className="page-heading">
           <div>
-            <h1>用語集</h1>
-            <p className="muted">AI がプレスリリースから抽出した専門用語と解説をまとめて確認できます。</p>
+            <h1>単語帳</h1>
+            <p className="muted">AI が記事解析時に登録した単語、読み、独立した意味、タグを確認できます。</p>
           </div>
           <span className="button">
             <BookOpenText size={17} /> {terms.length}語
           </span>
         </div>
 
-        <section className="term-index" aria-label="用語解説一覧">
+        <section className="term-index" aria-label="単語帳一覧">
           {terms.map((term) => (
-            <article className="term-entry" key={term.term}>
+            <article className="term-entry" key={term.word}>
               <div className="term-entry-head">
                 <div>
-                  <h2>{term.term}</h2>
-                  <p>{term.description}</p>
+                  <h2>{term.word}</h2>
+                  {term.reading ? <div className="term-reading">{term.reading}</div> : null}
+                  <p>{term.meaning}</p>
                 </div>
                 <span className="badge">{term.count}件</span>
               </div>
 
-              <div className="related-article-list" aria-label={`${term.term} に関連するリリース`}>
-                {term.articles.map((article) => (
+              <div className="related-article-list" aria-label={`${term.word} に関連する最新リリース`}>
+                {term.articles.slice(0, 3).map((article) => (
                   <Link className="related-article" href={`/articles/${article.id}`} key={article.id}>
                     <span>
                       <strong>{article.companyName}</strong>
@@ -51,7 +52,7 @@ export default function TermsPage() {
               </div>
 
               <div className="tag-row">
-                {[...new Set(term.articles.flatMap((article) => article.tags))].slice(0, 4).map((tag) => (
+                {term.tags.map((tag) => (
                   <span className="tag" key={tag}>
                     {tag}
                   </span>

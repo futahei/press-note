@@ -9,8 +9,10 @@ export type Company = {
 };
 
 export type Term = {
-  term: string;
-  description: string;
+  word: string;
+  reading?: string;
+  meaning: string;
+  tags: string[];
 };
 
 export type Article = {
@@ -19,7 +21,7 @@ export type Article = {
   title: string;
   summaryShort: string;
   summaryLong: string;
-  terms: Term[];
+  words: Term[];
   tags: string[];
   sourceUrl: string;
   pdfUrl?: string;
@@ -41,4 +43,3 @@ export type Source = {
   sevenDayCount: number;
   failureCount: number;
 };
-

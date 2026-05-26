@@ -78,12 +78,13 @@ export default async function ArticlePage({ params }: ArticlePageProps) {
             </section>
 
             <section className="detail-section">
-              <h2 className="section-title">用語解説</h2>
+              <h2 className="section-title">単語帳</h2>
               <div className="term-grid">
-                {article.terms.map((term) => (
-                  <div className="term-card" key={term.term}>
-                    <strong>{term.term}</strong>
-                    <span className="muted">{term.description}</span>
+                {article.words.map((term) => (
+                  <div className="term-card" key={term.word}>
+                    <strong>{term.word}</strong>
+                    {term.reading ? <span className="muted">{term.reading}</span> : null}
+                    <span className="muted">{term.meaning}</span>
                   </div>
                 ))}
               </div>

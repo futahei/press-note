@@ -30,7 +30,8 @@ describe("article data helpers", () => {
 
     expect(terms.length).toBeGreaterThan(0);
     expect(terms[0].articles.length).toBeGreaterThan(0);
-    expect(terms.some((term) => term.term === "デジタルツイン" && term.count > 1)).toBe(true);
+    expect(terms.some((term) => term.word === "デジタルツイン" && term.count > 1)).toBe(true);
+    expect(terms.every((term) => term.articles.length >= 1 && term.tags.length >= 1)).toBe(true);
   });
 });
 

@@ -45,16 +45,16 @@ export function WidgetPanel() {
 
       <section className="panel">
         <div className="panel-title">
-          <span>用語解説</span>
+          <span>単語帳</span>
           <Link className="badge" href="/terms">
             一覧
           </Link>
         </div>
         <div className="term-grid">
           {terms.slice(0, 3).map((term) => (
-            <div className="term-card" key={term.term}>
-              <strong>{term.term}</strong>
-              <span className="muted">{term.description}</span>
+            <div className="term-card" key={term.word}>
+              <strong>{term.word}</strong>
+              <span className="muted">{term.meaning}</span>
             </div>
           ))}
         </div>

@@ -499,6 +499,13 @@ select {
   line-height: 1.35;
 }
 
+.term-reading {
+  margin-bottom: 8px;
+  color: var(--text-secondary);
+  font-size: 13px;
+  font-weight: 700;
+}
+
 .term-entry p {
   margin: 0;
   color: #334155;

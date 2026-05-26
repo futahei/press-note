@@ -66,7 +66,7 @@ export function getTopicCounts(days = 1) {
 }
 
 export function getDailyTerms() {
-  return articles.flatMap((article) => article.terms).slice(0, 5);
+  return articles.flatMap((article) => article.words).slice(0, 5);
 }
 
 export type TermEntry = Term & {
@@ -76,6 +76,7 @@ export type TermEntry = Term & {
     title: string;
     companyName: string;
     tags: string[];
+    date: string;
   }>;
 };
 
@@ -84,20 +85,21 @@ export function getTermEntries(): TermEntry[] {
 
   for (const article of articles) {
     const company = getCompany(article.companyId);
-    for (const term of article.terms) {
-      const existing = entries.get(term.term);
+    for (const term of article.words) {
+      const existing = entries.get(term.word);
       const articleRef = {
         id: article.id,
         title: article.title,
         companyName: company.name,
-        tags: article.tags
+        tags: article.tags,
+        date: getComparableDate(article)
       };
 
       if (existing) {
         existing.count += 1;
         existing.articles.push(articleRef);
       } else {
-        entries.set(term.term, {
+        entries.set(term.word, {
           ...term,
           count: 1,
           articles: [articleRef]
@@ -106,7 +108,12 @@ export function getTermEntries(): TermEntry[] {
     }
   }
 
-  return [...entries.values()].sort((a, b) => b.count - a.count || a.term.localeCompare(b.term, "ja"));
+  return [...entries.values()]
+    .map((entry) => ({
+      ...entry,
+      articles: entry.articles.sort((a, b) => b.date.localeCompare(a.date))
+    }))
+    .sort((a, b) => b.count - a.count || a.word.localeCompare(b.word, "ja"));
 }
 
 export function getComparableDate(article: Article) {
