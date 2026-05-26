@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Activity, Bell, BookOpenText, Database, Plus, WandSparkles } from "lucide-react";
+import { Activity, BookOpenText, CircleAlert, Database, Plus, WandSparkles } from "lucide-react";
 import { NavRail } from "@/components/NavRail";
 import { getArticles, getSources } from "@/lib/data";
 
@@ -38,7 +38,7 @@ export default function AdminPage() {
             <h2>{articles.filter((article) => article.aiProcessedAt).length}件</h2>
           </div>
           <div className="admin-panel admin-stat">
-            <Bell size={19} color="#F59E0B" />
+            <CircleAlert size={19} color="#F59E0B" />
             <p className="muted">取得失敗</p>
             <h2>{failures}件</h2>
           </div>

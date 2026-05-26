@@ -116,6 +116,12 @@ export function getTermEntries(): TermEntry[] {
     .sort((a, b) => b.count - a.count || a.word.localeCompare(b.word, "ja"));
 }
 
+export function getLatestTermEntries(limit = 3): TermEntry[] {
+  return getTermEntries()
+    .sort((a, b) => (b.articles[0]?.date ?? "").localeCompare(a.articles[0]?.date ?? ""))
+    .slice(0, limit);
+}
+
 export function getComparableDate(article: Article) {
   return article.publishedAt ?? article.detectedAt;
 }

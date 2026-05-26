@@ -2,22 +2,18 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { Bell, BookOpenText, Building2, CircleHelp, Home, LineChart, Menu, Settings, Tags, X } from "lucide-react";
+import { BookOpenText, Building2, CircleHelp, Home, Menu, Settings, ShieldCheck, X } from "lucide-react";
 import { useState } from "react";
 
 const navItems = [
   { href: "/", label: "ホーム", icon: Home, activeMatch: /^\/$/ },
   { href: "/companies", label: "企業一覧", icon: Building2, activeMatch: /^\/companies/ },
   { href: "/terms", label: "単語帳", icon: BookOpenText, activeMatch: /^\/terms/ },
-  { href: "/admin", label: "管理", icon: Settings, activeMatch: /^\/admin/ },
+  { href: "/settings", label: "通知設定", icon: Settings, activeMatch: /^\/settings/ },
   { href: "/about-bot", label: "ヘルプ", icon: CircleHelp, activeMatch: /^\/about-bot/ }
 ];
 
-const placeholderItems = [
-  { label: "アラート", icon: Bell },
-  { label: "タグ", icon: Tags },
-  { label: "分析", icon: LineChart }
-];
+const adminItem = { href: "/admin", label: "管理画面", icon: ShieldCheck, activeMatch: /^\/admin/ };
 
 export function NavRail({ currentPath = "/" }: { currentPath?: string }) {
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -44,19 +40,8 @@ export function NavRail({ currentPath = "/" }: { currentPath?: string }) {
     </nav>
   );
 
-  const secondaryNav = (
-    <div className="nav-section" aria-label="準備中の機能">
-      {placeholderItems.map((item) => {
-        const Icon = item.icon;
-        return (
-          <span key={item.label} className="nav-item" title={`${item.label}（準備中）`} aria-label={`${item.label}（準備中）`}>
-            <Icon size={20} strokeWidth={2} />
-            <span className="mobile-nav-label">{item.label}</span>
-          </span>
-        );
-      })}
-    </div>
-  );
+  const AdminIcon = adminItem.icon;
+  const adminActive = adminItem.activeMatch.test(currentPath);
 
   return (
     <>
@@ -82,7 +67,18 @@ export function NavRail({ currentPath = "/" }: { currentPath?: string }) {
           <Image src="/icon.png" width={44} height={44} alt="" priority />
         </Link>
         {primaryNav}
-        {secondaryNav}
+        <div className="nav-admin">
+          <Link
+            className={adminActive ? "nav-item active" : "nav-item"}
+            href={adminItem.href}
+            title={adminItem.label}
+            aria-label={adminItem.label}
+            onClick={() => setMobileOpen(false)}
+          >
+            <AdminIcon size={21} strokeWidth={2.2} />
+            <span className="mobile-nav-label">{adminItem.label}</span>
+          </Link>
+        </div>
       </aside>
     </>
   );

@@ -1,6 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
-import { Bookmark, ExternalLink } from "lucide-react";
+import { ExternalLink } from "lucide-react";
 import { getCompany, getDisplayDate } from "@/lib/data";
 import type { Article } from "@/lib/types";
 
@@ -47,11 +47,7 @@ export function PressCard({ article }: { article: Article }) {
         >
           <ExternalLink size={18} />
         </a>
-        <button className="icon-button" type="button" title="あとで読む" aria-label="あとで読む">
-          <Bookmark size={18} />
-        </button>
       </div>
     </article>
   );
 }
-
