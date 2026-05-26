@@ -471,6 +471,62 @@ select {
   gap: 10px;
 }
 
+.term-index {
+  display: grid;
+  gap: 14px;
+}
+
+.term-entry {
+  display: grid;
+  gap: 14px;
+  border: 1px solid var(--border-subtle);
+  border-radius: 8px;
+  background: var(--bg-surface);
+  padding: 18px;
+  box-shadow: 0 10px 30px rgb(15 23 42 / 0.04);
+}
+
+.term-entry-head {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 14px;
+  align-items: start;
+}
+
+.term-entry h2 {
+  margin: 0 0 8px;
+  font-size: 20px;
+  line-height: 1.35;
+}
+
+.term-entry p {
+  margin: 0;
+  color: #334155;
+  line-height: 1.7;
+}
+
+.related-article-list {
+  display: grid;
+  gap: 8px;
+}
+
+.related-article {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  border: 1px solid var(--border-subtle);
+  border-radius: 8px;
+  padding: 10px 12px;
+  background: #f8fafc;
+}
+
+.related-article span {
+  display: grid;
+  gap: 3px;
+  min-width: 0;
+}
+
 .admin-layout {
   max-width: 1120px;
   margin: 0 auto;

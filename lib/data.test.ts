@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { getArticle, getArticles, getDailyTerms, getDisplayDate, getFeaturedCompanies, getSources, getTopicCounts } from "./data";
+import { getArticle, getArticles, getDailyTerms, getDisplayDate, getFeaturedCompanies, getSources, getTermEntries, getTopicCounts } from "./data";
 import { requireCronSecret } from "./cron";
 import { pushSubscriptionSchema } from "./schemas";
 
@@ -23,6 +23,14 @@ describe("article data helpers", () => {
     expect(getTopicCounts(30)[0].count).toBeGreaterThanOrEqual(getTopicCounts(30)[1].count);
     expect(getDailyTerms().length).toBeGreaterThan(0);
     expect(getSources().length).toBeGreaterThan(0);
+  });
+
+  it("aggregates term entries with related articles", () => {
+    const terms = getTermEntries();
+
+    expect(terms.length).toBeGreaterThan(0);
+    expect(terms[0].articles.length).toBeGreaterThan(0);
+    expect(terms.some((term) => term.term === "デジタルツイン" && term.count > 1)).toBe(true);
   });
 });
 

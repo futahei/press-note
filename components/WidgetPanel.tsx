@@ -1,4 +1,5 @@
 import Image from "next/image";
+import Link from "next/link";
 import { Flame, Star } from "lucide-react";
 import { getDailyTerms, getFeaturedCompanies, getTopicCounts } from "@/lib/data";
 
@@ -13,9 +14,9 @@ export function WidgetPanel() {
       <section className="panel">
         <div className="panel-title">
           <span>注目企業</span>
-          <a className="muted" href="/companies">
+          <Link className="muted" href="/companies">
             すべて見る
-          </a>
+          </Link>
         </div>
         {featured.map(({ company }) => (
           <div className="company-item" key={company.id}>
@@ -45,7 +46,9 @@ export function WidgetPanel() {
       <section className="panel">
         <div className="panel-title">
           <span>用語解説</span>
-          <span className="badge">注目</span>
+          <Link className="badge" href="/terms">
+            一覧
+          </Link>
         </div>
         <div className="term-grid">
           {terms.slice(0, 3).map((term) => (
@@ -72,4 +75,3 @@ export function WidgetPanel() {
     </aside>
   );
 }
-

@@ -2,12 +2,13 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { Bell, Building2, CircleHelp, Home, LineChart, Menu, Settings, Tags, X } from "lucide-react";
+import { Bell, BookOpenText, Building2, CircleHelp, Home, LineChart, Menu, Settings, Tags, X } from "lucide-react";
 import { useState } from "react";
 
 const navItems = [
   { href: "/", label: "ホーム", icon: Home, activeMatch: /^\/$/ },
   { href: "/companies", label: "企業一覧", icon: Building2, activeMatch: /^\/companies/ },
+  { href: "/terms", label: "用語集", icon: BookOpenText, activeMatch: /^\/terms/ },
   { href: "/admin", label: "管理", icon: Settings, activeMatch: /^\/admin/ },
   { href: "/about-bot", label: "ヘルプ", icon: CircleHelp, activeMatch: /^\/about-bot/ }
 ];

@@ -1,5 +1,5 @@
 import { articles, companies, sources } from "./sample-data";
-import type { Article, Company, Source } from "./types";
+import type { Article, Company, Source, Term } from "./types";
 
 export function getCompany(companyId: string): Company {
   const company = companies.find((item) => item.id === companyId);
@@ -69,6 +69,46 @@ export function getDailyTerms() {
   return articles.flatMap((article) => article.terms).slice(0, 5);
 }
 
+export type TermEntry = Term & {
+  count: number;
+  articles: Array<{
+    id: string;
+    title: string;
+    companyName: string;
+    tags: string[];
+  }>;
+};
+
+export function getTermEntries(): TermEntry[] {
+  const entries = new Map<string, TermEntry>();
+
+  for (const article of articles) {
+    const company = getCompany(article.companyId);
+    for (const term of article.terms) {
+      const existing = entries.get(term.term);
+      const articleRef = {
+        id: article.id,
+        title: article.title,
+        companyName: company.name,
+        tags: article.tags
+      };
+
+      if (existing) {
+        existing.count += 1;
+        existing.articles.push(articleRef);
+      } else {
+        entries.set(term.term, {
+          ...term,
+          count: 1,
+          articles: [articleRef]
+        });
+      }
+    }
+  }
+
+  return [...entries.values()].sort((a, b) => b.count - a.count || a.term.localeCompare(b.term, "ja"));
+}
+
 export function getComparableDate(article: Article) {
   return article.publishedAt ?? article.detectedAt;
 }
@@ -86,4 +126,3 @@ export function getDisplayDate(article: Article) {
   }).format(date);
   return `${label} ${formatted}`;
 }
-
