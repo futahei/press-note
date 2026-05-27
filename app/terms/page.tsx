@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { ArrowUpRight, BookOpenText } from "lucide-react";
+import { EmptyState } from "@/components/EmptyState";
 import { NavRail } from "@/components/NavRail";
 import { TopBar } from "@/components/TopBar";
 import { WidgetPanel } from "@/components/WidgetPanel";
@@ -29,40 +30,49 @@ export default async function TermsPage() {
           </span>
         </div>
 
-        <section className="term-index" aria-label="単語帳一覧">
-          {terms.map((term) => (
-            <article className="term-entry" key={term.word}>
-              <div className="term-entry-head">
-                <div>
-                  <h2>{term.word}</h2>
-                  {term.reading ? <div className="term-reading">{term.reading}</div> : null}
-                  <p>{term.meaning}</p>
+        {terms.length > 0 ? (
+          <section className="term-index" aria-label="単語帳一覧">
+            {terms.map((term) => (
+              <article className="term-entry" key={term.word}>
+                <div className="term-entry-head">
+                  <div>
+                    <h2>{term.word}</h2>
+                    {term.reading ? <div className="term-reading">{term.reading}</div> : null}
+                    <p>{term.meaning}</p>
+                  </div>
+                  <span className="badge">{term.count}件</span>
                 </div>
-                <span className="badge">{term.count}件</span>
-              </div>
 
-              <div className="related-article-list" aria-label={`${term.word} に関連する最新リリース`}>
-                {term.articles.slice(0, 3).map((article) => (
-                  <Link className="related-article" href={`/articles/${article.id}`} key={article.id}>
-                    <span>
-                      <strong>{article.companyName}</strong>
-                      <span className="muted">{article.title}</span>
+                <div className="related-article-list" aria-label={`${term.word} に関連する最新リリース`}>
+                  {term.articles.slice(0, 3).map((article) => (
+                    <Link className="related-article" href={`/articles/${article.id}`} key={article.id}>
+                      <span>
+                        <strong>{article.companyName}</strong>
+                        <span className="muted">{article.title}</span>
+                      </span>
+                      <ArrowUpRight size={17} aria-hidden />
+                    </Link>
+                  ))}
+                </div>
+
+                <div className="tag-row">
+                  {term.tags.map((tag) => (
+                    <span className="tag" key={tag}>
+                      {tag}
                     </span>
-                    <ArrowUpRight size={17} aria-hidden />
-                  </Link>
-                ))}
-              </div>
-
-              <div className="tag-row">
-                {term.tags.map((tag) => (
-                  <span className="tag" key={tag}>
-                    {tag}
-                  </span>
-                ))}
-              </div>
-            </article>
-          ))}
-        </section>
+                  ))}
+                </div>
+              </article>
+            ))}
+          </section>
+        ) : (
+          <EmptyState
+            title="単語がまだ登録されていません"
+            description="記事のAI解析が完了すると、抽出された単語・読み・意味・タグがここに表示されます。"
+            actionHref="/admin/words"
+            actionLabel="単語を管理"
+          />
+        )}
       </main>
       <WidgetPanel />
     </div>

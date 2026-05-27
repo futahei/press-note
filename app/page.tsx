@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { ChevronLeft, ChevronRight, Sparkles } from "lucide-react";
+import { EmptyState } from "@/components/EmptyState";
 import { NavRail } from "@/components/NavRail";
 import { PressCard } from "@/components/PressCard";
 import { TopBar } from "@/components/TopBar";
@@ -14,14 +15,16 @@ type HomeProps = {
   }>;
 };
 
+const ALL_TAG_LABEL = "\u3059\u3079\u3066";
+
 export const revalidate = 60;
 
 export default async function Home({ searchParams }: HomeProps) {
   const params = (await searchParams) ?? {};
-  const activeTag = params.tag ?? "すべて";
+  const activeTag = params.tag ?? ALL_TAG_LABEL;
   const sort = params.sort ?? "latest";
   const [articles, topicCounts] = await Promise.all([getArticles({ q: params.q, tag: activeTag, sort }), getTopicCounts(1)]);
-  const topTags = ["すべて", ...topicCounts.slice(0, 4).map((item) => item.tag)];
+  const topTags = [ALL_TAG_LABEL, ...topicCounts.slice(0, 4).map((item) => item.tag)];
 
   return (
     <div className="app-shell">
@@ -40,7 +43,7 @@ export default async function Home({ searchParams }: HomeProps) {
 
         <div className="filters" aria-label="タグフィルタ">
           {topTags.map((tag) => (
-            <Link key={tag} className={tag === activeTag ? "chip active" : "chip"} href={tag === "すべて" ? "/" : `/?tag=${encodeURIComponent(tag)}`}>
+            <Link key={tag} className={tag === activeTag ? "chip active" : "chip"} href={tag === ALL_TAG_LABEL ? "/" : `/?tag=${encodeURIComponent(tag)}`}>
               {tag}
             </Link>
           ))}
@@ -55,25 +58,36 @@ export default async function Home({ searchParams }: HomeProps) {
           </Link>
         </div>
 
-        <section className="article-list" aria-label="プレスリリース一覧">
-          {articles.map((article) => (
-            <PressCard key={article.id} article={article} />
-          ))}
-        </section>
+        {articles.length > 0 ? (
+          <section className="article-list" aria-label="プレスリリース一覧">
+            {articles.map((article) => (
+              <PressCard key={article.id} article={article} />
+            ))}
+          </section>
+        ) : (
+          <EmptyState
+            title="今日のプレスリリースはまだありません"
+            description="監視ソースが未登録、または条件に一致する記事がまだ取得されていません。"
+            actionHref="/admin/sources/new"
+            actionLabel="監視ソースを追加"
+          />
+        )}
 
-        <nav className="pagination" aria-label="ページネーション">
-          <span aria-hidden>
-            <ChevronLeft size={16} />
-          </span>
-          <span className="current">1</span>
-          <Link href="/?page=2">2</Link>
-          <Link href="/?page=3">3</Link>
-          <span>...</span>
-          <Link href="/?page=7">7</Link>
-          <Link href="/?page=2" aria-label="次のページ">
-            <ChevronRight size={16} />
-          </Link>
-        </nav>
+        {articles.length > 0 ? (
+          <nav className="pagination" aria-label="ページネーション">
+            <span aria-hidden>
+              <ChevronLeft size={16} />
+            </span>
+            <span className="current">1</span>
+            <Link href="/?page=2">2</Link>
+            <Link href="/?page=3">3</Link>
+            <span>...</span>
+            <Link href="/?page=7">7</Link>
+            <Link href="/?page=2" aria-label="次のページ">
+              <ChevronRight size={16} />
+            </Link>
+          </nav>
+        ) : null}
       </main>
       <WidgetPanel />
     </div>

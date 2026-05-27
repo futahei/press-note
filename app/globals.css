@@ -188,11 +188,33 @@ select {
 .panel,
 .press-card,
 .detail-section,
-.admin-panel {
+.admin-panel,
+.empty-state {
   border: 1px solid var(--border-subtle);
   border-radius: 8px;
   background: var(--bg-surface);
   box-shadow: 0 10px 30px rgb(15 23 42 / 0.04);
+}
+
+.empty-state {
+  display: grid;
+  justify-items: center;
+  gap: 14px;
+  padding: 42px 24px;
+  text-align: center;
+}
+
+.empty-state svg {
+  color: var(--text-secondary);
+}
+
+.empty-state h2,
+.empty-state p {
+  margin: 0;
+}
+
+.empty-state h2 {
+  font-size: 18px;
 }
 
 .filters,
