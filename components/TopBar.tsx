@@ -5,7 +5,7 @@ export function TopBar({ defaultQuery = "" }: { defaultQuery?: string }) {
     <header className="top-bar">
       <form className="search-box" action="/">
         <Search size={18} aria-hidden />
-        <input name="q" defaultValue={defaultQuery} placeholder="企業名・キーワードで検索" aria-label="企業名・キーワードで検索" />
+        <input name="q" defaultValue={defaultQuery} placeholder="記事タイトル・企業名・タグで検索" aria-label="記事タイトル・企業名・タグで検索" />
       </form>
       <div className="inline-list">
         <span className="select-like">

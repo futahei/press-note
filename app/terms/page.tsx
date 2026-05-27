@@ -2,7 +2,6 @@ import Link from "next/link";
 import { ArrowUpRight, BookOpenText } from "lucide-react";
 import { EmptyState } from "@/components/EmptyState";
 import { NavRail } from "@/components/NavRail";
-import { TopBar } from "@/components/TopBar";
 import { WidgetPanel } from "@/components/WidgetPanel";
 import { getTermEntries } from "@/lib/data";
 
@@ -19,7 +18,6 @@ export default async function TermsPage() {
     <div className="app-shell">
       <NavRail currentPath="/terms" />
       <main className="main-pane">
-        <TopBar />
         <div className="page-heading">
           <div>
             <h1>単語帳</h1>
