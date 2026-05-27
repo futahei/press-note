@@ -14,13 +14,20 @@ export async function WidgetPanel() {
           </Link>
         </div>
         <div className="term-grid">
-          {terms.map((term) => (
-            <div className="term-card" key={term.word}>
-              <strong>{term.word}</strong>
-              {term.reading ? <span className="muted">{term.reading}</span> : null}
-              <span className="muted">{term.meaning}</span>
+          {terms.length > 0 ? (
+            terms.map((term) => (
+              <div className="term-card" key={term.word}>
+                <strong>{term.word}</strong>
+                {term.reading ? <span className="muted">{term.reading}</span> : null}
+                <span className="muted">{term.meaning}</span>
+              </div>
+            ))
+          ) : (
+            <div className="term-card">
+              <strong>まだ単語はありません</strong>
+              <span className="muted">記事のAI解析が完了すると、最新の単語がここに表示されます。</span>
             </div>
-          ))}
+          )}
         </div>
       </section>
     </aside>

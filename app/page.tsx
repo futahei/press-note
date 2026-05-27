@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ChevronLeft, ChevronRight, Sparkles } from "lucide-react";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 import { EmptyState } from "@/components/EmptyState";
 import { NavRail } from "@/components/NavRail";
 import { PressCard } from "@/components/PressCard";
@@ -36,9 +36,6 @@ export default async function Home({ searchParams }: HomeProps) {
             <h1>今日のプレスリリース</h1>
             <p className="muted">登録ソースから取得した最新記事を表示します。</p>
           </div>
-          <Link className="button" href="/admin/sources/new">
-            <Sparkles size={17} /> 監視ソースを追加
-          </Link>
         </div>
 
         <div className="filters" aria-label="タグフィルタ">
@@ -65,12 +62,7 @@ export default async function Home({ searchParams }: HomeProps) {
             ))}
           </section>
         ) : (
-          <EmptyState
-            title="今日のプレスリリースはまだありません"
-            description="監視ソースが未登録、または条件に一致する記事がまだ取得されていません。"
-            actionHref="/admin/sources/new"
-            actionLabel="監視ソースを追加"
-          />
+          <EmptyState title="今日のプレスリリースはまだありません" description="監視ソースが未登録、または条件に一致する記事がまだ取得されていません。" />
         )}
 
         {articles.length > 0 ? (

@@ -38,12 +38,7 @@ export default async function CompaniesPage() {
             ))}
           </section>
         ) : (
-          <EmptyState
-            title="企業がまだ登録されていません"
-            description="管理画面から監視ソースを追加すると、紐づく企業がここに表示されます。"
-            actionHref="/admin/sources/new"
-            actionLabel="監視ソースを追加"
-          />
+          <EmptyState title="企業がまだ登録されていません" description="管理者が監視ソースを登録すると、紐づく企業がここに表示されます。" />
         )}
       </main>
       <WidgetPanel />

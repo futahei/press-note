@@ -85,6 +85,7 @@ alter database postgres set "app.cron_secret" = 'your-cron-secret';
 - `/terms` 単語帳
 - `/companies` 企業一覧
 - `/settings` 通知時刻設定
+- `/about` サイト説明
 - `/admin/login` 管理ログイン
 - `/admin` 管理ダッシュボード
 - `/admin/sources` ソース管理

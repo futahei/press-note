@@ -66,12 +66,7 @@ export default async function TermsPage() {
             ))}
           </section>
         ) : (
-          <EmptyState
-            title="単語がまだ登録されていません"
-            description="記事のAI解析が完了すると、抽出された単語・読み・意味・タグがここに表示されます。"
-            actionHref="/admin/words"
-            actionLabel="単語を管理"
-          />
+          <EmptyState title="単語がまだ登録されていません" description="記事のAI解析が完了すると、抽出された単語・読み・意味・タグがここに表示されます。" />
         )}
       </main>
       <WidgetPanel />

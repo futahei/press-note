@@ -10,7 +10,7 @@ const navItems = [
   { href: "/companies", label: "企業一覧", icon: Building2, activeMatch: /^\/companies/ },
   { href: "/terms", label: "単語帳", icon: BookOpenText, activeMatch: /^\/terms/ },
   { href: "/settings", label: "通知設定", icon: Settings, activeMatch: /^\/settings/ },
-  { href: "/about-bot", label: "ヘルプ", icon: CircleHelp, activeMatch: /^\/about-bot/ }
+  { href: "/about", label: "ヘルプ", icon: CircleHelp, activeMatch: /^\/about/ }
 ];
 
 const adminItem = { href: "/admin", label: "管理画面", icon: ShieldCheck, activeMatch: /^\/admin/ };

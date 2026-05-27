@@ -107,7 +107,7 @@
 - 差分検知: `Last-Modified` / `ETag` / コンテンツハッシュ。
 - スケジュール: **30 分間隔** で全ソースをラウンドロビン処理(後述の Vercel 無料枠制約に合わせチャンク化)。
 - 同一ホストへは 1 並列・1〜3 秒の sleep。
-- `User-Agent`: `PressNoteBot/0.1 (+https://<deploy-host>/about-bot)`。
+- `User-Agent`: `PressNoteBot/0.1 (+https://<deploy-host>/about)`。
 - `robots.txt` を取得し Disallow パスはスキップ(`crawl_logs` に「robots block」で記録)。
 
 #### 2.2.2 PDF 取得
@@ -171,7 +171,7 @@
 - 同一ホストへは 30 分間隔・最低 1 秒の sleep。
 - AI 要約 + 抜粋(引用範囲)のみ表示し、必ず本家リンクを併記(著作権法 32 条の引用要件を満たす形)。
 - `crawl_logs` を 90 日保持。苦情時の調査根拠とする。
-- Bot 説明ページ `/about-bot` を公開し連絡先を明示。
+- サイト説明ページ `/about` を公開し、収集方針とサービス概要を明示。
 
 #### 2.2.7 `robots.txt` キャッシュ
 
@@ -534,7 +534,7 @@
 - `/companies` 企業一覧 (将来)。初期はサイドナビからリンクのみ。
 - `/terms` 単語帳。AI が登録した単語・読み・意味・タグを表示し、各単語に紐づく最新記事 3 件を表示。
 - `/settings` ユーザー向け通知時刻設定。
-- `/about-bot` Bot 説明ページ。
+- `/about` サイト説明ページ。
 - `/admin/login` ログイン。
 - `/admin` ダッシュボード。
 - `/admin/sources` ソース一覧。

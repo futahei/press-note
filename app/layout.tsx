@@ -6,7 +6,7 @@ export const metadata: Metadata = {
     default: "PressNote",
     template: "%s | PressNote"
   },
-  description: "監視対象企業のプレスリリースを毎日収集し、AI 要約と単語帳で配信する Web アプリ。",
+  description: "監視対象企業のプレスリリースを収集し、AI要約と単語帳で閲覧できるWebアプリ。",
   icons: {
     icon: "/icon.png"
   }
