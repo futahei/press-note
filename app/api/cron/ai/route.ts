@@ -7,6 +7,8 @@ type RawArticleForAi = {
   id: string;
   title: string;
   source_url: string;
+  pdf_url: string | null;
+  sources?: { selectors?: unknown | null } | Array<{ selectors?: unknown | null }> | null;
 };
 
 export async function POST(request: Request) {
@@ -24,7 +26,7 @@ export async function POST(request: Request) {
 
   const { data, error } = await client
     .from("articles")
-    .select("id, title, source_url")
+    .select("id, title, source_url, pdf_url, sources(selectors)")
     .is("ai_processed_at", null)
     .is("hidden_at", null)
     .order("detected_at", { ascending: true })

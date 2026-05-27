@@ -674,6 +674,109 @@ fieldset.field {
   height: 16px;
 }
 
+.scrape-workspace {
+  display: grid;
+  grid-template-columns: minmax(260px, 360px) minmax(0, 1fr);
+  gap: 16px;
+  align-items: start;
+}
+
+.selector-panel,
+.scrape-browser {
+  min-width: 0;
+  border: 1px solid var(--border-subtle);
+  border-radius: 8px;
+  background: #f8fafc;
+}
+
+.selector-panel {
+  display: grid;
+  gap: 14px;
+  padding: 14px;
+}
+
+.selector-buttons {
+  display: grid;
+  gap: 8px;
+}
+
+.selector-button {
+  display: grid;
+  gap: 4px;
+  width: 100%;
+  border: 1px solid var(--border-subtle);
+  border-radius: 8px;
+  background: white;
+  padding: 10px 12px;
+  text-align: left;
+}
+
+.selector-button span {
+  font-weight: 800;
+}
+
+.selector-button small {
+  color: var(--text-secondary);
+  font-size: 12px;
+  line-height: 1.4;
+}
+
+.selector-button.active {
+  border-color: #93c5fd;
+  background: #eff6ff;
+  color: var(--accent-primary);
+}
+
+.scrape-browser {
+  overflow: hidden;
+}
+
+.scrape-browser-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  border-bottom: 1px solid var(--border-subtle);
+  background: white;
+  padding: 10px 12px;
+  color: var(--text-secondary);
+  font-size: 13px;
+}
+
+.scrape-browser-bar code {
+  max-width: 48%;
+  overflow: hidden;
+  border: 1px solid var(--border-subtle);
+  border-radius: 999px;
+  background: #f8fafc;
+  padding: 4px 8px;
+  color: var(--text-primary);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.scrape-browser-body {
+  height: 620px;
+  overflow: auto;
+  background: white;
+  padding: 18px;
+  cursor: crosshair;
+}
+
+.scrape-browser-body * {
+  max-width: 100%;
+}
+
+.scrape-browser-body a {
+  color: #2563eb;
+  text-decoration: underline;
+}
+
+.scrape-browser-body *:hover {
+  outline: 2px solid #60a5fa;
+  outline-offset: 2px;
+}
+
 @media (max-width: 1180px) {
   .app-shell {
     grid-template-columns: 72px minmax(0, 1fr);
@@ -807,5 +910,13 @@ fieldset.field {
 
   .detail-layout {
     grid-template-columns: 1fr;
+  }
+
+  .scrape-workspace {
+    grid-template-columns: 1fr;
+  }
+
+  .scrape-browser-body {
+    height: 460px;
   }
 }

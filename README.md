@@ -1,8 +1,7 @@
 # PressNote
 
 PressNote は、監視対象企業のプレスリリースを収集し、AI による要約、タグ付け、単語解説とともに閲覧できる Web アプリです。
-
-仕様の詳細は [docs/SPEC.md](docs/SPEC.md) を参照してください。
+詳細な仕様は [docs/SPEC.md](docs/SPEC.md) を参照してください。
 
 ## 技術スタック
 
@@ -18,7 +17,7 @@ PressNote は、監視対象企業のプレスリリースを収集し、AI に�
 pnpm install
 ```
 
-ローカルで起動する場合は `.env.example` を参考に `.env.local` を作成し、必要な値を入れてください。
+`.env.example` を参考に `.env.local` を作成し、必要な値を入れてください。
 
 ```bash
 pnpm dev
@@ -78,9 +77,7 @@ alter database postgres set "app.pressnote_base_url" = 'https://your-app.example
 alter database postgres set "app.cron_secret" = 'your-cron-secret';
 ```
 
-ダミーデータは含めていません。運用開始時は `companies` と `sources` に監視対象を登録してください。AI 解析後の単語は `words` と `article_words` に保存され、画面から読み込まれます。
-
-RSS/Atom がない企業ページは、管理画面の `/admin/sources/new` で URL を解析し、`scrape` モードとして登録します。初回バックフィルはデフォルト 5 件です。
+ダミーデータは含めていません。運用開始時は管理画面から監視対象を登録してください。RSS/Atom がない企業ページは `/admin/sources/new` で対象企業名と URL を入力し、プレビュー上で記事要素、日付要素、タイトル要素、記事 URL、本文要素、追加遷移/PDF リンクを選択して保存します。初回バックフィルはデフォルト 5 件です。
 
 ## 主な画面
 
@@ -93,6 +90,7 @@ RSS/Atom がない企業ページは、管理画面の `/admin/sources/new` で 
 - `/admin/login` 管理ログイン
 - `/admin` 管理ダッシュボード
 - `/admin/sources` ソース管理
+- `/admin/sources/new` ソース登録ウィザード
 - `/admin/words` 単語帳管理
 
 ## API
@@ -111,6 +109,8 @@ RSS/Atom がない企業ページは、管理画面の `/admin/sources/new` で 
 - `POST /api/admin/logout`
 - `GET /api/admin/sources`
 - `POST /api/admin/sources`
+- `POST /api/admin/sources/analyze`
+- `POST /api/admin/sources/preview`
 - `GET /api/admin/words`
 - `POST /api/admin/words`
 - `PATCH /api/admin/words`

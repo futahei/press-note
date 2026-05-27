@@ -1,5 +1,5 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { defaultSelectors, extractPressLinks, extractRssItems, fetchText, sha256, type SourceMode, type SourceSelectors } from "./content";
+import { defaultSelectors, extractConfiguredItems, extractRssItems, fetchText, isPdfUrl, sha256, type SourceMode, type SourceSelectors } from "./content";
 
 export type CrawlableSource = {
   id: string;
@@ -22,7 +22,7 @@ export async function crawlSource(client: SupabaseClient, source: CrawlableSourc
   try {
     const body = await fetchText(source.url);
     const items =
-      source.mode === "rss" ? extractRssItems(body, source.url, limit) : extractPressLinks(body, source.url, limit);
+      source.mode === "rss" ? extractRssItems(body, source.url, limit) : extractConfiguredItems(body, source.url, source.selectors, limit);
 
     let itemsNew = 0;
     for (const item of items) {
@@ -33,6 +33,7 @@ export async function crawlSource(client: SupabaseClient, source: CrawlableSourc
         source_item_id: sourceItemId,
         title: item.title,
         source_url: item.url,
+        pdf_url: item.pdfUrl ?? (isPdfUrl(item.url) ? item.url : null),
         published_at: item.publishedAt ?? null,
         detected_at: new Date().toISOString(),
         summary_short: "",

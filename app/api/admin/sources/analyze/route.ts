@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { sourceAnalyzeSchema } from "@/lib/schemas";
-import { defaultSelectors, detectFeedUrl, extractPressLinks, extractRssItems, faviconUrl, fetchText, getSiteName } from "@/lib/content";
+import { detectFeedUrl, extractConfiguredItems, extractRssItems, faviconUrl, fetchText, getSiteName, sanitizePreviewHtml, suggestSelectors } from "@/lib/content";
 
 export async function POST(request: Request) {
   const body = await request.json().catch(() => null);
@@ -14,7 +14,8 @@ export async function POST(request: Request) {
     const html = await fetchText(sourceUrl);
     const feedUrl = detectFeedUrl(html, sourceUrl);
     const mode = feedUrl ? "rss" : "scrape";
-    const preview = feedUrl ? extractRssItems(await fetchText(feedUrl), feedUrl, 5) : extractPressLinks(html, sourceUrl, 5);
+    const selectors = suggestSelectors(html);
+    const preview = feedUrl ? extractRssItems(await fetchText(feedUrl), feedUrl, 5) : extractConfiguredItems(html, sourceUrl, selectors, 5);
 
     return NextResponse.json({
       data: {
@@ -23,11 +24,12 @@ export async function POST(request: Request) {
         feedUrl,
         companyName: getSiteName(html, sourceUrl),
         companyLogoUrl: faviconUrl(sourceUrl),
-        selectors: defaultSelectors,
+        selectors,
+        previewHtml: sanitizePreviewHtml(html),
         confidence: preview.length > 0 ? 0.82 : 0.48,
         notes: feedUrl
-          ? "RSS/Atomフィードを検出しました。フィードURLを監視対象として保存できます。"
-          : "RSS/Atomは検出されませんでした。管理者確認済みページとして、リンク抽出によるスクレイピングで保存できます。",
+          ? "RSS/Atom フィードを検出しました。フィード URL を監視対象として保存できます。"
+          : "RSS/Atom は検出されませんでした。画面上の要素をクリックしてスクレイピング設定を確認してください。",
         preview
       }
     });

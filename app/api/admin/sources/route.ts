@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { getSources } from "@/lib/data";
-import { defaultSelectors, faviconUrl } from "@/lib/content";
+import { defaultSelectors, faviconUrl, type SourceSelectors } from "@/lib/content";
 import { crawlSource } from "@/lib/source-crawl";
 import { getSupabaseAdminClient } from "@/lib/supabase";
 
@@ -12,7 +12,7 @@ const createSourceSchema = z.object({
   companyDescription: z.string().optional(),
   url: z.string().url(),
   mode: z.enum(["rss", "scrape", "pdf_link"]).default("scrape"),
-  selectors: z.record(z.string()).optional(),
+  selectors: z.unknown().optional(),
   backfillLimit: z.number().int().min(0).max(20).default(5)
 });
 
@@ -54,7 +54,7 @@ export async function POST(request: Request) {
     companyId = company.id;
   }
 
-  const selectors = parsed.data.selectors ?? defaultSelectors;
+  const selectors = (parsed.data.selectors ?? defaultSelectors) as SourceSelectors;
   const { data, error } = await client
     .from("sources")
     .insert({
