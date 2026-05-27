@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { getSources } from "@/lib/data";
+import { defaultSelectors, faviconUrl } from "@/lib/content";
+import { crawlSource } from "@/lib/source-crawl";
 import { getSupabaseAdminClient } from "@/lib/supabase";
 
 const createSourceSchema = z.object({
@@ -9,13 +11,10 @@ const createSourceSchema = z.object({
   companyLogoUrl: z.string().url().optional(),
   companyDescription: z.string().optional(),
   url: z.string().url(),
-  mode: z.enum(["rss", "scrape", "pdf_link"]).default("rss")
+  mode: z.enum(["rss", "scrape", "pdf_link"]).default("scrape"),
+  selectors: z.record(z.string()).optional(),
+  backfillLimit: z.number().int().min(0).max(20).default(5)
 });
-
-function faviconUrl(url: string) {
-  const host = new URL(url).hostname;
-  return `https://www.google.com/s2/favicons?domain=${host}&sz=128`;
-}
 
 export async function GET() {
   return NextResponse.json({ data: await getSources() });
@@ -55,21 +54,38 @@ export async function POST(request: Request) {
     companyId = company.id;
   }
 
+  const selectors = parsed.data.selectors ?? defaultSelectors;
   const { data, error } = await client
     .from("sources")
     .insert({
       company_id: companyId,
       url: parsed.data.url,
       mode: parsed.data.mode,
+      selectors,
       enabled: true,
       health: "ok"
     })
-    .select("id, company_id, url, mode, enabled, health")
+    .select("id, company_id, url, mode, enabled, health, selectors")
     .single();
 
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 
-  return NextResponse.json({ data }, { status: 201 });
+  const crawl =
+    parsed.data.backfillLimit > 0
+      ? await crawlSource(
+          client,
+          {
+            id: data.id,
+            company_id: data.company_id,
+            url: data.url,
+            mode: data.mode,
+            selectors: data.selectors
+          },
+          parsed.data.backfillLimit
+        )
+      : undefined;
+
+  return NextResponse.json({ data: { ...data, crawl } }, { status: 201 });
 }

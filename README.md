@@ -42,6 +42,8 @@ OPENAI_API_KEY=
 OPENAI_MODEL=gpt-5.5
 OPENAI_DAILY_BUDGET_TOKENS=1000000
 
+NEXT_PUBLIC_APP_URL=http://localhost:3000
+
 NEXT_PUBLIC_SUPABASE_URL=
 NEXT_PUBLIC_SUPABASE_ANON_KEY=
 SUPABASE_URL=
@@ -77,6 +79,8 @@ alter database postgres set "app.cron_secret" = 'your-cron-secret';
 ```
 
 ダミーデータは含めていません。運用開始時は `companies` と `sources` に監視対象を登録してください。AI 解析後の単語は `words` と `article_words` に保存され、画面から読み込まれます。
+
+RSS/Atom がない企業ページは、管理画面の `/admin/sources/new` で URL を解析し、`scrape` モードとして登録します。初回バックフィルはデフォルト 5 件です。
 
 ## 主な画面
 
