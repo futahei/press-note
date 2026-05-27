@@ -7,7 +7,7 @@ type ArticleRouteProps = {
 
 export async function GET(_: Request, { params }: ArticleRouteProps) {
   const { id } = await params;
-  const article = getArticle(id);
+  const article = await getArticle(id);
   if (!article) {
     return NextResponse.json({ error: "Not found" }, { status: 404 });
   }
@@ -21,4 +21,3 @@ export async function GET(_: Request, { params }: ArticleRouteProps) {
     }
   );
 }
-

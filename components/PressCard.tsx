@@ -1,7 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { ExternalLink } from "lucide-react";
-import { getCompany, getDisplayDate } from "@/lib/data";
+import { getDisplayDate } from "@/lib/data";
 import type { Article } from "@/lib/types";
 
 const modeLabel = {
@@ -11,12 +11,12 @@ const modeLabel = {
 };
 
 export function PressCard({ article }: { article: Article }) {
-  const company = getCompany(article.companyId);
+  const company = article.company;
 
   return (
     <article className="press-card">
       <div className="logo-box">
-        <Image src={company.logoUrl} alt={`${company.name} ロゴ`} width={58} height={58} />
+        <Image src={company.logoUrl} alt={`${company.name} logo`} width={58} height={58} />
       </div>
       <div>
         <div className="article-meta">

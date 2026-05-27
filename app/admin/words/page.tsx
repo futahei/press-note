@@ -6,8 +6,10 @@ export const metadata = {
   title: "単語帳管理"
 };
 
-export default function AdminWordsPage() {
-  const words = getTermEntries();
+export const dynamic = "force-dynamic";
+
+export default async function AdminWordsPage() {
+  const words = await getTermEntries();
 
   return (
     <div className="app-shell">

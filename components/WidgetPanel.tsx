@@ -1,8 +1,8 @@
 import Link from "next/link";
 import { getLatestTermEntries } from "@/lib/data";
 
-export function WidgetPanel() {
-  const terms = getLatestTermEntries(3);
+export async function WidgetPanel() {
+  const terms = await getLatestTermEntries(3);
 
   return (
     <aside className="side-pane" aria-label="補助情報">

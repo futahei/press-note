@@ -4,7 +4,7 @@ import Link from "next/link";
 import { BookOpenText, Check, Pencil, Plus, Trash2, X } from "lucide-react";
 import { useState } from "react";
 import type { TermEntry } from "@/lib/data";
-import { tagVocabulary } from "@/lib/sample-data";
+import { tagVocabulary } from "@/lib/tag-vocabulary";
 
 type WordForm = {
   word: string;
@@ -24,12 +24,15 @@ export function AdminWordsClient({ initialWords }: { initialWords: TermEntry[] }
   const [words, setWords] = useState<TermEntry[]>(initialWords);
   const [editingWord, setEditingWord] = useState<string | null>(null);
   const [form, setForm] = useState<WordForm>(emptyForm);
+  const [saving, setSaving] = useState(false);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   const selectedLimitReached = form.tags.length >= 3;
 
   function startCreate() {
     setEditingWord(null);
     setForm(emptyForm);
+    setErrorMessage(null);
   }
 
   function startEdit(word: TermEntry) {
@@ -40,6 +43,7 @@ export function AdminWordsClient({ initialWords }: { initialWords: TermEntry[] }
       meaning: word.meaning,
       tags: word.tags.slice(0, 3)
     });
+    setErrorMessage(null);
   }
 
   function toggleTag(tag: string) {
@@ -54,20 +58,40 @@ export function AdminWordsClient({ initialWords }: { initialWords: TermEntry[] }
     });
   }
 
-  function saveWord() {
+  async function saveWord() {
     const word = form.word.trim();
     const meaning = form.meaning.trim();
     if (!word || !meaning || form.tags.length === 0) {
+      setErrorMessage("単語、意味、タグを入力してください。");
       return;
     }
 
+    setSaving(true);
+    setErrorMessage(null);
+    const existing = editingWord ? words.find((item) => item.word === editingWord) : undefined;
+    const response = await fetch("/api/admin/words", {
+      method: editingWord ? "PATCH" : "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        originalWord: editingWord ?? undefined,
+        word,
+        reading: form.reading.trim() || undefined,
+        meaning,
+        tags: form.tags
+      })
+    });
+
+    setSaving(false);
+    if (!response.ok) {
+      setErrorMessage("単語の保存に失敗しました。入力内容とSupabase設定を確認してください。");
+      return;
+    }
+
+    const result = (await response.json()) as { data: TermEntry };
     const nextWord: TermEntry = {
-      word,
-      reading: form.reading.trim() || undefined,
-      meaning,
-      tags: form.tags,
-      count: editingWord ? words.find((item) => item.word === editingWord)?.count ?? 0 : 0,
-      articles: editingWord ? words.find((item) => item.word === editingWord)?.articles ?? [] : []
+      ...result.data,
+      count: existing?.count ?? result.data.count,
+      articles: existing?.articles ?? result.data.articles
     };
 
     setWords((current) => {
@@ -84,7 +108,19 @@ export function AdminWordsClient({ initialWords }: { initialWords: TermEntry[] }
     setForm(emptyForm);
   }
 
-  function deleteWord(word: string) {
+  async function deleteWord(word: string) {
+    setErrorMessage(null);
+    const response = await fetch("/api/admin/words", {
+      method: "DELETE",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ word })
+    });
+
+    if (!response.ok) {
+      setErrorMessage("単語の削除に失敗しました。Supabase設定を確認してください。");
+      return;
+    }
+
     setWords((current) => current.filter((item) => item.word !== word));
     if (editingWord === word) {
       setEditingWord(null);
@@ -97,7 +133,7 @@ export function AdminWordsClient({ initialWords }: { initialWords: TermEntry[] }
       <div className="page-heading">
         <div>
           <h1>単語帳管理</h1>
-          <p className="muted">AI が登録した単語の追加、編集、削除を管理します。</p>
+          <p className="muted">AIが登録した単語の追加、編集、削除を管理します。</p>
         </div>
         <button className="button primary" type="button" onClick={startCreate}>
           <Plus size={17} /> 単語を追加
@@ -147,7 +183,7 @@ export function AdminWordsClient({ initialWords }: { initialWords: TermEntry[] }
           </small>
         </fieldset>
         <div className="segment-row">
-          <button className="button primary" type="button" onClick={saveWord}>
+          <button className="button primary" type="button" onClick={saveWord} disabled={saving}>
             <Check size={17} /> {editingWord ? "更新" : "登録"}
           </button>
           {editingWord ? (
@@ -156,6 +192,7 @@ export function AdminWordsClient({ initialWords }: { initialWords: TermEntry[] }
             </button>
           ) : null}
         </div>
+        {errorMessage ? <p className="muted">{errorMessage}</p> : null}
       </section>
 
       <section className="admin-panel">
@@ -165,7 +202,7 @@ export function AdminWordsClient({ initialWords }: { initialWords: TermEntry[] }
               <th>単語</th>
               <th>読み</th>
               <th>タグ</th>
-              <th>紐づく記事</th>
+              <th>紐づき記事</th>
               <th>操作</th>
             </tr>
           </thead>

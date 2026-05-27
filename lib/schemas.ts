@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { tagVocabulary } from "./sample-data";
+import { tagVocabulary } from "./tag-vocabulary";
 
 export const termSchema = z.object({
   word: z.string().min(1),

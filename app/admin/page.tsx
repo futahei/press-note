@@ -7,9 +7,10 @@ export const metadata = {
   title: "管理ダッシュボード"
 };
 
-export default function AdminPage() {
-  const articles = getArticles();
-  const sources = getSources();
+export const dynamic = "force-dynamic";
+
+export default async function AdminPage() {
+  const [articles, sources] = await Promise.all([getArticles(), getSources()]);
   const failures = sources.reduce((sum, source) => sum + source.failureCount, 0);
 
   return (
@@ -19,7 +20,7 @@ export default function AdminPage() {
         <div className="page-heading">
           <div>
             <h1>管理ダッシュボード</h1>
-            <p className="muted">24h / 7d の処理状況とソースの健全性。</p>
+            <p className="muted">取得状況とソースの健全性を確認します。</p>
           </div>
           <Link className="button primary" href="/admin/sources/new">
             <Plus size={17} /> ソース追加
@@ -29,7 +30,7 @@ export default function AdminPage() {
         <section className="admin-stat-grid">
           <div className="admin-panel admin-stat">
             <Activity size={19} color="#2563EB" />
-            <p className="muted">本日の記事</p>
+            <p className="muted">記事</p>
             <h2>{articles.length}件</h2>
           </div>
           <div className="admin-panel admin-stat">
@@ -39,19 +40,19 @@ export default function AdminPage() {
           </div>
           <div className="admin-panel admin-stat">
             <CircleAlert size={19} color="#F59E0B" />
-            <p className="muted">取得失敗</p>
+            <p className="muted">取得失敗数</p>
             <h2>{failures}件</h2>
           </div>
           <div className="admin-panel admin-stat">
             <Database size={19} color="#475569" />
-            <p className="muted">DB 使用率</p>
-            <h2>3%</h2>
+            <p className="muted">登録ソース</p>
+            <h2>{sources.length}件</h2>
           </div>
         </section>
 
         <section className="admin-panel">
           <div className="panel-title">
-            <span>ソース状態</span>
+            <span>ソース状況</span>
             <div className="inline-list">
               <Link className="button" href="/admin/words">
                 <BookOpenText size={17} /> 単語帳

@@ -4,7 +4,7 @@ import { notFound } from "next/navigation";
 import { ArrowLeft, ExternalLink, FileText } from "lucide-react";
 import { NavRail } from "@/components/NavRail";
 import { WidgetPanel } from "@/components/WidgetPanel";
-import { getArticle, getCompany, getDisplayDate } from "@/lib/data";
+import { getArticle, getDisplayDate } from "@/lib/data";
 
 type ArticlePageProps = {
   params: Promise<{ id: string }>;
@@ -16,9 +16,11 @@ const modeLabel = {
   pdf_link: "PDF"
 };
 
+export const revalidate = 60;
+
 export async function generateMetadata({ params }: ArticlePageProps): Promise<Metadata> {
   const { id } = await params;
-  const article = getArticle(id);
+  const article = await getArticle(id);
   if (!article) {
     return { title: "記事が見つかりません" };
   }
@@ -35,11 +37,11 @@ export async function generateMetadata({ params }: ArticlePageProps): Promise<Me
 
 export default async function ArticlePage({ params }: ArticlePageProps) {
   const { id } = await params;
-  const article = getArticle(id);
+  const article = await getArticle(id);
   if (!article) {
     notFound();
   }
-  const company = getCompany(article.companyId);
+  const company = article.company;
 
   return (
     <div className="app-shell">

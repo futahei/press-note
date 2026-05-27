@@ -14,12 +14,14 @@ type HomeProps = {
   }>;
 };
 
+export const revalidate = 60;
+
 export default async function Home({ searchParams }: HomeProps) {
   const params = (await searchParams) ?? {};
   const activeTag = params.tag ?? "すべて";
   const sort = params.sort ?? "latest";
-  const articles = getArticles({ q: params.q, tag: activeTag, sort });
-  const topTags = ["すべて", ...getTopicCounts(1).slice(0, 4).map((item) => item.tag)];
+  const [articles, topicCounts] = await Promise.all([getArticles({ q: params.q, tag: activeTag, sort }), getTopicCounts(1)]);
+  const topTags = ["すべて", ...topicCounts.slice(0, 4).map((item) => item.tag)];
 
   return (
     <div className="app-shell">
@@ -29,7 +31,7 @@ export default async function Home({ searchParams }: HomeProps) {
         <div className="page-heading">
           <div>
             <h1>今日のプレスリリース</h1>
-            <p className="muted">2026年5月26日（火）</p>
+            <p className="muted">登録ソースから取得した最新記事を表示します。</p>
           </div>
           <Link className="button" href="/admin/sources/new">
             <Sparkles size={17} /> 監視ソースを追加

@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { getTermEntries } from "@/lib/data";
 
 export async function GET() {
-  const words = getTermEntries().map((word) => ({
+  const words = (await getTermEntries()).map((word) => ({
     ...word,
     articles: word.articles.slice(0, 3)
   }));
@@ -16,4 +16,3 @@ export async function GET() {
     }
   );
 }
-

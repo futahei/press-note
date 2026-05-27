@@ -5,7 +5,7 @@ export type Company = {
   id: string;
   name: string;
   logoUrl: string;
-  description: string;
+  description?: string;
 };
 
 export type Term = {
@@ -18,6 +18,7 @@ export type Term = {
 export type Article = {
   id: string;
   companyId: string;
+  company: Company;
   title: string;
   summaryShort: string;
   summaryLong: string;
@@ -35,6 +36,7 @@ export type Article = {
 export type Source = {
   id: string;
   companyId: string;
+  companyName: string;
   url: string;
   mode: FetchMode;
   health: SourceHealth;

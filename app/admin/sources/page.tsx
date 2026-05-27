@@ -1,14 +1,16 @@
 import Link from "next/link";
 import { Plus } from "lucide-react";
 import { NavRail } from "@/components/NavRail";
-import { getCompany, getSources } from "@/lib/data";
+import { getSources } from "@/lib/data";
 
 export const metadata = {
   title: "ソース管理"
 };
 
-export default function AdminSourcesPage() {
-  const sources = getSources();
+export const dynamic = "force-dynamic";
+
+export default async function AdminSourcesPage() {
+  const sources = await getSources();
 
   return (
     <div className="app-shell">
@@ -38,7 +40,7 @@ export default function AdminSourcesPage() {
             <tbody>
               {sources.map((source) => (
                 <tr key={source.id}>
-                  <td>{getCompany(source.companyId).name}</td>
+                  <td>{source.companyName}</td>
                   <td>{source.url}</td>
                   <td>{source.mode}</td>
                   <td>{source.lastCrawledAt ?? "-"}</td>
@@ -57,4 +59,3 @@ export default function AdminSourcesPage() {
     </div>
   );
 }
-

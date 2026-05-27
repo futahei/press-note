@@ -9,8 +9,10 @@ export const metadata = {
   title: "単語帳"
 };
 
-export default function TermsPage() {
-  const terms = getTermEntries();
+export const revalidate = 60;
+
+export default async function TermsPage() {
+  const terms = await getTermEntries();
 
   return (
     <div className="app-shell">

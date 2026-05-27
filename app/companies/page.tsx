@@ -1,13 +1,17 @@
 import Image from "next/image";
 import { NavRail } from "@/components/NavRail";
 import { WidgetPanel } from "@/components/WidgetPanel";
-import { companies } from "@/lib/sample-data";
+import { getCompanies } from "@/lib/data";
 
 export const metadata = {
   title: "企業一覧"
 };
 
-export default function CompaniesPage() {
+export const revalidate = 60;
+
+export default async function CompaniesPage() {
+  const companies = await getCompanies();
+
   return (
     <div className="app-shell">
       <NavRail currentPath="/companies" />
@@ -26,7 +30,7 @@ export default function CompaniesPage() {
               </div>
               <div>
                 <h2>{company.name}</h2>
-                <p className="summary">{company.description}</p>
+                {company.description ? <p className="summary">{company.description}</p> : null}
               </div>
             </article>
           ))}
@@ -36,4 +40,3 @@ export default function CompaniesPage() {
     </div>
   );
 }
-
