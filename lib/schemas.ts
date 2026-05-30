@@ -9,6 +9,12 @@ export const sourceInputSchema = z.object({
   initialImportCount: z.coerce.number().int().min(0).max(20).default(0)
 });
 
+export const sourceUpdateSchema = z.object({
+  name: z.string().trim().min(1).max(120).optional(),
+  url: z.string().trim().url().optional(),
+  enabled: z.coerce.boolean().optional()
+});
+
 export const articleSummarySchema = z.object({
   title: z.string().trim().min(1),
   summary: z.string().trim().min(1).max(100),
@@ -32,10 +38,29 @@ export const termInputSchema = z.object({
   source_kind: z.enum(["ai", "manual"]).default("manual")
 });
 
+export const termUpdateSchema = termInputSchema.partial().extend({
+  source_kind: z.enum(["ai", "manual"]).optional()
+});
+
+export const sourcePreviewSchema = sourceInputSchema.pick({
+  name: true,
+  url: true,
+  initialImportCount: true
+});
+
+export const previewArticleSchema = articleSummarySchema.extend({
+  url: z.string().url()
+});
+
+export const sourceCreateJsonSchema = sourceInputSchema.extend({
+  previewArticles: z.array(previewArticleSchema).max(20).default([])
+});
+
 export const articleQuerySchema = z.object({
   page: z.coerce.number().int().min(1).default(1),
   q: z.string().trim().max(120).optional(),
   source: z.string().uuid().optional(),
+  date: z.string().date().optional(),
   from: z.string().date().optional(),
   to: z.string().date().optional()
 });
@@ -54,3 +79,4 @@ export const pushSubscriptionSchema = z.object({
 });
 
 export type ArticleSummaryOutput = z.infer<typeof articleSummarySchema>;
+export type PreviewArticle = z.infer<typeof previewArticleSchema>;

@@ -29,6 +29,7 @@ create table if not exists terms (
   reading text not null,
   description text not null,
   source_kind text not null check (source_kind in ('ai','manual')),
+  status text not null default 'published' check (status in ('published')),
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
 );
@@ -49,6 +50,14 @@ create table if not exists reports (
   status text not null default 'open' check (status in ('open','accepted','rejected')),
   created_at timestamptz not null default now(),
   resolved_at timestamptz
+);
+
+create unique index if not exists reports_one_open_per_article_idx on reports (article_id) where status = 'open';
+
+create table if not exists rejected_article_urls (
+  url text primary key,
+  article_id uuid references articles(id) on delete set null,
+  created_at timestamptz not null default now()
 );
 
 create table if not exists push_subscriptions (
@@ -98,5 +107,6 @@ alter table articles enable row level security;
 alter table terms enable row level security;
 alter table article_terms enable row level security;
 alter table reports enable row level security;
+alter table rejected_article_urls enable row level security;
 alter table push_subscriptions enable row level security;
 alter table llm_usage_logs enable row level security;

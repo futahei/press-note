@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Image from "next/image";
 import Link from "next/link";
 import { ArchiveIcon, BellIcon, BookIcon, HomeIcon, ShieldIcon } from "@/components/Icons";
 import "./globals.css";
@@ -25,7 +26,7 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
         <header className="global-nav">
           <div className="global-nav-inner">
             <Link className="brand-link" href="/" aria-label="PressNote ホーム">
-              <img alt="" className="brand-icon" height="28" src="/icon.png" width="28" />
+              <Image alt="" className="brand-icon" height={28} priority src="/icon.png" width={28} />
               <span className="brand-wordmark">PressNote</span>
             </Link>
             <nav className="nav-links" aria-label="主要ナビゲーション">

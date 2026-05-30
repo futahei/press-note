@@ -1,4 +1,5 @@
 import { listTerms } from "@/lib/data";
+import { WordsManager } from "@/components/admin/WordsManager";
 
 export default async function AdminWordsPage() {
   const terms = await listTerms();
@@ -28,28 +29,7 @@ export default async function AdminWordsPage() {
           </button>
         </div>
       </form>
-      <div className="table-wrap">
-        <table className="table">
-          <thead>
-            <tr>
-              <th>見出し語</th>
-              <th>読み方</th>
-              <th>登録元</th>
-              <th>関連記事</th>
-            </tr>
-          </thead>
-          <tbody>
-            {terms.map((term) => (
-              <tr key={term.id}>
-                <td>{term.headword}</td>
-                <td>{term.reading}</td>
-                <td>{term.source_kind === "ai" ? "AI 自動" : "管理者手動"}</td>
-                <td>{term.article_count ?? 0}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+      <WordsManager terms={terms} />
     </div>
   );
 }

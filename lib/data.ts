@@ -18,6 +18,7 @@ export async function listSources(): Promise<Source[]> {
   if (!supabase) return fixtureSources;
 
   const { data, error } = await supabase.from("sources").select("*").order("created_at", { ascending: false });
+  if (error?.code === "PGRST205") return fixtureSources;
   if (error) throw error;
   return data ?? [];
 }
@@ -31,9 +32,8 @@ export async function listArticles(searchParams: unknown = {}) {
     if (query.q) {
       rows = rows.filter((article) => `${article.title} ${article.summary}`.includes(query.q ?? ""));
     }
-    if (query.source) {
-      rows = rows.filter((article) => article.source_id === query.source);
-    }
+    if (query.source) rows = rows.filter((article) => article.source_id === query.source);
+    if (query.date) rows = rows.filter((article) => (article.published_at ?? article.fetched_at).startsWith(query.date ?? ""));
     const start = (query.page - 1) * ARTICLES_PER_PAGE;
     return { articles: rows.slice(start, start + ARTICLES_PER_PAGE), total: rows.length, page: query.page };
   }
@@ -47,12 +47,20 @@ export async function listArticles(searchParams: unknown = {}) {
 
   if (query.q) request = request.or(`title.ilike.%${query.q}%,summary.ilike.%${query.q}%`);
   if (query.source) request = request.eq("source_id", query.source);
+  if (query.date) {
+    request = request
+      .gte("published_at", `${query.date}T00:00:00.000Z`)
+      .lte("published_at", `${query.date}T23:59:59.999Z`);
+  }
   if (query.from) request = request.gte("published_at", `${query.from}T00:00:00.000Z`);
   if (query.to) request = request.lte("published_at", `${query.to}T23:59:59.999Z`);
 
   const from = (query.page - 1) * ARTICLES_PER_PAGE;
   const to = from + ARTICLES_PER_PAGE - 1;
   const { data, count, error } = await request.range(from, to);
+  if (error?.code === "PGRST205") {
+    return { articles: orderByArticleDate(fixtureArticles), total: fixtureArticles.length, page: query.page };
+  }
   if (error) throw error;
 
   return { articles: (data ?? []) as Article[], total: count ?? 0, page: query.page };
@@ -74,6 +82,7 @@ export async function listRecentArticles(): Promise<Article[]> {
     .order("published_at", { ascending: false, nullsFirst: false })
     .order("fetched_at", { ascending: false });
 
+  if (error?.code === "PGRST205") return orderByArticleDate(fixtureArticles);
   if (error) throw error;
   return (data ?? []) as Article[];
 }
@@ -115,7 +124,16 @@ export async function listTerms(searchParams: unknown = {}): Promise<Term[]> {
   let request = supabase.from("terms_with_article_count").select("*").order("reading", { ascending: true });
   if (query.initial) request = request.ilike("reading", `${query.initial}%`);
   if (query.q) request = request.or(`headword.ilike.${query.q}%,reading.ilike.${query.q}%`);
-  const { data, error } = await request.limit(500);
+  let { data, error } = await request.limit(500);
+  if (error?.code === "PGRST205") {
+    let fallback = supabase.from("terms").select("*").order("reading", { ascending: true });
+    if (query.initial) fallback = fallback.ilike("reading", `${query.initial}%`);
+    if (query.q) fallback = fallback.or(`headword.ilike.${query.q}%,reading.ilike.${query.q}%`);
+    const fallbackResult = await fallback.limit(500);
+    data = fallbackResult.data;
+    error = fallbackResult.error;
+    if (error?.code === "PGRST205") return fixtureTerms;
+  }
   if (error) throw error;
   return (data ?? []) as Term[];
 }
@@ -162,6 +180,14 @@ export async function getAdminSummary() {
   ]);
 
   for (const result of [sources, articles, reports, terms]) {
+    if (result.error?.code === "PGRST205") {
+      return {
+        sourceCount: fixtureSources.length,
+        todayArticleCount: fixtureArticles.length,
+        openReportCount: fixtureReports.length,
+        termCount: fixtureTerms.length
+      };
+    }
     if (result.error) throw result.error;
   }
 
@@ -182,6 +208,7 @@ export async function listOpenReports(): Promise<Report[]> {
     .select("*, article:articles(*, source:sources(id,name,url))")
     .eq("status", "open")
     .order("created_at", { ascending: true });
+  if (error?.code === "PGRST205") return fixtureReports;
   if (error) throw error;
   return (data ?? []) as Report[];
 }
@@ -195,6 +222,7 @@ export async function listUsageDaily(): Promise<UsageDaily[]> {
     .select("*")
     .order("usage_date", { ascending: true })
     .limit(90);
+  if (error?.code === "PGRST205") return fixtureUsage;
   if (error) throw error;
   return (data ?? []) as UsageDaily[];
 }

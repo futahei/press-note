@@ -16,6 +16,11 @@ export default async function AdminReportsPage() {
             <h3>{report.article?.title ?? "削除済み記事"}</h3>
             <p>{report.article?.summary}</p>
             <div className="button-row">
+              {report.article?.url ? (
+                <a className="button-secondary" href={report.article.url} target="_blank" rel="noopener">
+                  本家リンク
+                </a>
+              ) : null}
               <form action={`/api/admin/reports/${report.id}/accept`} method="post">
                 <button className="button-rect" type="submit">
                   記事を削除

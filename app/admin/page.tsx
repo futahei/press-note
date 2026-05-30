@@ -4,6 +4,12 @@ import { getAdminSummary, listUsageDaily } from "@/lib/data";
 export default async function AdminPage() {
   const [summary, usage] = await Promise.all([getAdminSummary(), listUsageDaily()]);
   const totalCost = usage.reduce((sum, row) => sum + Number(row.cost_usd), 0);
+  const last30Days = usage.slice(-30);
+  const maxCost = Math.max(...last30Days.map((row) => Number(row.cost_usd)), 0.01);
+  const modelTotals = last30Days.reduce<Record<string, number>>((acc, row) => {
+    acc[row.model] = (acc[row.model] ?? 0) + Number(row.cost_usd);
+    return acc;
+  }, {});
 
   return (
     <div style={{ display: "grid", gap: 28 }}>
@@ -33,6 +39,26 @@ export default async function AdminPage() {
         <div>
           <h2 className="section-title">LLM コスト</h2>
           <p className="muted">直近データ合計 ${totalCost.toFixed(4)}</p>
+        </div>
+        <div className="bar-chart" aria-label="直近 30 日の日次 OpenAI 使用料">
+          {last30Days.map((row) => (
+            <div className="bar-chart-item" key={`${row.usage_date}-${row.model}`}>
+              <div className="bar-track">
+                <span
+                  className="bar-fill"
+                  style={{ height: `${Math.max(8, (Number(row.cost_usd) / maxCost) * 100)}%` }}
+                />
+              </div>
+              <span className="small">{new Date(row.usage_date).getDate()}</span>
+            </div>
+          ))}
+        </div>
+        <div className="chips" aria-label="モデル別内訳">
+          {Object.entries(modelTotals).map(([model, cost]) => (
+            <span className="chip" key={model}>
+              {model}: ${cost.toFixed(4)}
+            </span>
+          ))}
         </div>
         <div className="table-wrap">
           <table className="table">

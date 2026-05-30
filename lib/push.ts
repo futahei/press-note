@@ -70,6 +70,51 @@ export async function sendDailyNotification() {
   };
 }
 
+export async function sendTestNotification(endpoint: string) {
+  if (!configureWebPush()) {
+    throw new Error("VAPID keys are not configured");
+  }
+
+  const supabase = getServiceSupabase();
+  const { data: subscription, error } = await supabase
+    .from("push_subscriptions")
+    .select("*")
+    .eq("endpoint", endpoint)
+    .single();
+  if (error) throw error;
+
+  try {
+    await webpush.sendNotification(
+      {
+        endpoint: subscription.endpoint,
+        keys: { p256dh: subscription.p256dh, auth: subscription.auth }
+      },
+      JSON.stringify({
+        title: "PressNote テスト通知",
+        body: "通知設定は正常に動作しています。",
+        url: "/settings"
+      })
+    );
+    return { ok: true };
+  } catch (error) {
+    if (typeof error === "object" && error && "statusCode" in error && error.statusCode === 410) {
+      await supabase.from("push_subscriptions").delete().eq("endpoint", endpoint);
+    }
+    throw error;
+  }
+}
+
+export async function pruneOldSubscriptions() {
+  const supabase = getServiceSupabase();
+  const cutoff = new Date(Date.now() - 365 * 24 * 60 * 60 * 1000).toISOString();
+  const { count, error } = await supabase
+    .from("push_subscriptions")
+    .delete({ count: "exact" })
+    .lt("created_at", cutoff);
+  if (error) throw error;
+  return { deleted: count ?? 0 };
+}
+
 export function publicVapidKey() {
   return requiredEnv("VAPID_PUBLIC_KEY");
 }

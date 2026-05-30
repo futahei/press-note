@@ -65,6 +65,19 @@ export function SettingsClient() {
     setStatus("未購読");
   }
 
+  async function sendTest() {
+    const registration = await navigator.serviceWorker.ready;
+    const subscription = await registration.pushManager.getSubscription();
+    if (!subscription) return;
+    setStatus("テスト通知を送信中");
+    const response = await fetch("/api/push/test", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ endpoint: subscription.endpoint })
+    });
+    setStatus(response.ok ? "テスト通知を送信しました" : "テスト通知の送信に失敗しました");
+  }
+
   return (
     <div className="utility-card">
       <div>
@@ -78,7 +91,7 @@ export function SettingsClient() {
         <button className="button-secondary" type="button" onClick={unsubscribe} disabled={!subscribed}>
           OFF にする
         </button>
-        <button className="button-rect" type="button" disabled={!subscribed}>
+        <button className="button-rect" type="button" onClick={sendTest} disabled={!subscribed}>
           テスト通知を送る
         </button>
       </div>

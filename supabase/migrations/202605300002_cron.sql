@@ -34,3 +34,14 @@ select cron.schedule(
   );
   $$
 );
+
+select cron.schedule(
+  'pressnote-prune',
+  '0 18 * * 6',
+  $$
+  select net.http_get(
+    url := current_setting('app.pressnote_origin', true) || '/api/cron/prune',
+    headers := jsonb_build_object('Authorization', 'Bearer ' || current_setting('app.cron_secret', true))
+  );
+  $$
+);

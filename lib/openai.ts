@@ -1,3 +1,4 @@
+import { z } from "zod";
 import { articleSummarySchema, type ArticleSummaryOutput } from "@/lib/schemas";
 import { env, requiredEnv } from "@/lib/env";
 
@@ -38,6 +39,23 @@ type ResponsesPayload = {
   };
 };
 
+const urlListSchema = z.object({
+  urls: z.array(z.string().url()).max(20)
+});
+
+const urlListJsonSchema = {
+  type: "object",
+  additionalProperties: false,
+  required: ["urls"],
+  properties: {
+    urls: {
+      type: "array",
+      maxItems: 20,
+      items: { type: "string" }
+    }
+  }
+} as const;
+
 function extractText(payload: ResponsesPayload): string {
   if (payload.output_text) return payload.output_text;
   for (const output of payload.output ?? []) {
@@ -48,15 +66,56 @@ function extractText(payload: ResponsesPayload): string {
   throw new Error("OpenAI response did not include output text");
 }
 
-export async function summarizePressReleaseUrl(url: string): Promise<ArticleSummaryOutput> {
+function usageFrom(payload: ResponsesPayload) {
+  return {
+    input_tokens: payload.usage?.input_tokens ?? 0,
+    output_tokens: payload.usage?.output_tokens ?? 0,
+    cost_usd: 0
+  };
+}
+
+function sleep(ms: number) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+async function createResponse(body: unknown): Promise<ResponsesPayload> {
+  let lastError: Error | null = null;
+
+  for (let attempt = 0; attempt < 3; attempt += 1) {
+    try {
+      const response = await fetch("https://api.openai.com/v1/responses", {
+        method: "POST",
+        headers: {
+          authorization: `Bearer ${requiredEnv("OPENAI_API_KEY")}`,
+          "content-type": "application/json"
+        },
+        body: JSON.stringify(body)
+      });
+
+      if (response.ok) {
+        return (await response.json()) as ResponsesPayload;
+      }
+
+      lastError = new Error(`OpenAI request failed: ${response.status}`);
+    } catch (error) {
+      lastError = error instanceof Error ? error : new Error("OpenAI request failed");
+    }
+
+    await sleep(2 ** attempt * 500);
+  }
+
+  throw lastError ?? new Error("OpenAI request failed");
+}
+
+export async function summarizePressReleaseUrl(
+  url: string
+): Promise<ArticleSummaryOutput & { usage: ReturnType<typeof usageFrom> }> {
   const model = env("OPENAI_MODEL") ?? "gpt-5.5";
-  const response = await fetch("https://api.openai.com/v1/responses", {
-    method: "POST",
-    headers: {
-      authorization: `Bearer ${requiredEnv("OPENAI_API_KEY")}`,
-      "content-type": "application/json"
-    },
-    body: JSON.stringify({
+  let lastResult: ArticleSummaryOutput | null = null;
+  let lastUsage = { input_tokens: 0, output_tokens: 0, cost_usd: 0 };
+
+  for (let attempt = 0; attempt < 3; attempt += 1) {
+    const payload = await createResponse({
       model,
       tools: [{ type: "web_search" }],
       tool_choice: "required",
@@ -79,13 +138,47 @@ export async function summarizePressReleaseUrl(url: string): Promise<ArticleSumm
           strict: true
         }
       }
-    })
-  });
-
-  if (!response.ok) {
-    throw new Error(`OpenAI request failed: ${response.status}`);
+    });
+    lastUsage = usageFrom(payload);
+    lastResult = articleSummarySchema.parse(JSON.parse(extractText(payload)));
+    if (lastResult.summary.length <= 100) {
+      return { ...lastResult, usage: lastUsage };
+    }
   }
 
-  const payload = (await response.json()) as ResponsesPayload;
-  return articleSummarySchema.parse(JSON.parse(extractText(payload)));
+  if (!lastResult) {
+    throw new Error("OpenAI summary failed");
+  }
+
+  return { ...lastResult, summary: lastResult.summary.slice(0, 100), usage: lastUsage };
+}
+
+export async function searchPressReleaseUrls(
+  prompt: string,
+  purpose: "crawl_step_b" | "crawl_step_c"
+): Promise<{ urls: string[]; usage: ReturnType<typeof usageFrom>; purpose: string }> {
+  const model = env("OPENAI_MODEL") ?? "gpt-5.5";
+  const payload = await createResponse({
+    model,
+    tools: [{ type: "web_search" }],
+    tool_choice: "required",
+    input: [
+      {
+        role: "system",
+        content:
+          "あなたは企業公式サイトのプレスリリースURLだけを抽出する調査員です。公式URLのみを返し、重複や一覧ページを除外してください。"
+      },
+      { role: "user", content: prompt }
+    ],
+    text: {
+      format: {
+        type: "json_schema",
+        name: "press_release_urls",
+        schema: urlListJsonSchema,
+        strict: true
+      }
+    }
+  });
+
+  return { ...urlListSchema.parse(JSON.parse(extractText(payload))), usage: usageFrom(payload), purpose };
 }
