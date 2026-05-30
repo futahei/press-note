@@ -15,7 +15,6 @@
   "dependencies": {
     "@supabase/supabase-js": "^2.49.8",
     "bcryptjs": "^3.0.2",
-    "cheerio": "^1.0.0",
     "jose": "^5.10.0",
     "next": "^15.3.3",
     "react": "^19.1.0",

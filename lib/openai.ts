@@ -155,7 +155,7 @@ export async function summarizePressReleaseUrl(
 
 export async function searchPressReleaseUrls(
   prompt: string,
-  purpose: "crawl_step_b" | "crawl_step_c"
+  purpose: "crawl_step_a" | "crawl_step_b" | "crawl_step_c"
 ): Promise<{ urls: string[]; usage: ReturnType<typeof usageFrom>; purpose: string }> {
   const model = env("OPENAI_MODEL") ?? "gpt-5.5";
   const payload = await createResponse({

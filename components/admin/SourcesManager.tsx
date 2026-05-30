@@ -15,7 +15,6 @@ type PreviewResponse = {
   articles: PreviewArticle[];
   discovered: number;
   rejected?: number;
-  usedFallback?: boolean;
 };
 
 export function SourcesManager({ sources }: { sources: Source[] }) {
@@ -61,9 +60,7 @@ export function SourcesManager({ sources }: { sources: Source[] }) {
         return;
       }
       setMessage(
-        `${data.discovered} 件の候補から ${data.articles.length} 件をプレビューしました。${
-          data.usedFallback ? " 直接候補が一致しなかったため公式検索も確認しました。" : ""
-        }`
+        `${data.discovered} 件の候補から ${data.articles.length} 件をプレビューしました。AI が登録URL、同一ドメイン検索、企業名検索の順に確認しています。`
       );
     } catch {
       setMessage("プレビューに失敗しました。URL と OpenAI 設定を確認してください。");

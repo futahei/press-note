@@ -1,101 +1,30 @@
-import * as cheerio from "cheerio";
 import { getServiceSupabase } from "@/lib/supabase";
 import { searchPressReleaseUrls, summarizePressReleaseUrl } from "@/lib/openai";
 import type { ArticleSummaryOutput, PreviewArticle } from "@/lib/schemas";
 import type { Source } from "@/lib/types";
 
-type LinkCandidate = {
-  url: string;
-  text: string;
-};
-
-const blockedPathPatterns = [
-  /\/(?:contact|inquiry|privacy|terms|sitemap|search|login|signup|recruit|career|careers)(?:\/|$)/i,
-  /\/(?:rss|feed)(?:\/|$)/i,
-  /\/(?:tag|tags|category|categories)(?:\/|$)/i
-];
-
-const blockedFilePattern = /\.(?:jpe?g|png|gif|svg|webp|ico|css|js|zip|mp4|mp3|woff2?|ttf)(?:$|\?)/i;
-
-function scorePressReleaseLink(candidate: LinkCandidate): number {
-  const url = new URL(candidate.url);
-  const path = decodeURIComponent(url.pathname);
-  const text = candidate.text.replace(/\s+/g, " ").trim();
-  const haystack = `${path} ${url.search} ${text}`.toLowerCase();
-  let score = 0;
-
-  if (blockedFilePattern.test(url.pathname) || blockedPathPatterns.some((pattern) => pattern.test(url.pathname))) {
-    return -1;
-  }
-
-  if (/プレスリリース|ニュースリリース|press release|news release/.test(haystack)) score += 6;
-  if (/リリース|press|release|pr\b/.test(haystack)) score += 3;
-  if (/ニュース|お知らせ|発表|news|topics|notice/.test(haystack)) score += 2;
-  if (/\/(?:press|release|news|topics|notice|pr|ir)(?:\/|-|_)/i.test(url.pathname)) score += 2;
-  if (/\/20\d{2}[/-](?:0?[1-9]|1[0-2])(?:[/-]\d{1,2})?/i.test(url.pathname)) score += 4;
-  if (/(?:^|[^\d])20\d{2}[./-]\d{1,2}[./-]\d{1,2}(?:[^\d]|$)/.test(haystack)) score += 4;
-  if (/(?:^|[^\d])20\d{6}(?:[^\d]|$)/.test(haystack)) score += 3;
-  if (url.pathname.split("/").filter(Boolean).length >= 3) score += 1;
-
-  return score;
-}
-
-export function rankListingLinks(candidates: LinkCandidate[]): string[] {
-  const ranked = candidates
-    .map((candidate, index) => ({ ...candidate, index, score: scorePressReleaseLink(candidate) }))
-    .filter((candidate) => candidate.score >= 3)
-    .sort((a, b) => b.score - a.score || a.index - b.index);
-
-  return ranked.map((candidate) => candidate.url);
-}
-
-export async function discoverLinksFromListing(listingUrl: string): Promise<string[]> {
-  const response = await fetch(listingUrl, {
-    headers: {
-      "user-agent": "PressNote/0.1 (+https://pressnote.example)"
-    },
-    next: { revalidate: 0 }
-  });
-  if (!response.ok) return [];
-
-  const html = await response.text();
-  const $ = cheerio.load(html);
-  const base = new URL(listingUrl);
-  const seen = new Set<string>();
-  const candidates: LinkCandidate[] = [];
-
-  $("a[href]").each((_, element) => {
-    const href = $(element).attr("href");
-    if (!href) return;
-    try {
-      const url = new URL(href, base);
-      url.hash = "";
-      if (url.origin !== base.origin || seen.has(url.toString())) return;
-      seen.add(url.toString());
-      candidates.push({ url: url.toString(), text: $(element).text() });
-    } catch {
-      // Ignore invalid href values from source pages.
-    }
-  });
-
-  return rankListingLinks(candidates).slice(0, 20);
-}
-
-async function searchOfficialPressReleaseUrls(source: Pick<Source, "name" | "url">, sourceId?: string) {
+export function buildPressReleaseDiscoveryPrompt(source: Pick<Source, "name" | "url">, count: number) {
   const sourceUrl = new URL(source.url);
-  const official = await searchPressReleaseUrls(
-    `site:${sourceUrl.hostname} に絞って、本日公開された ${source.name} の公式プレスリリース個別URLを最大20件抽出してください。一覧ページは除外してください。`,
-    "crawl_step_b"
-  );
-  if (sourceId) await logUsage({ purpose: official.purpose, sourceId, usage: official.usage });
-  if (official.urls.length > 0) return official.urls.slice(0, 20);
 
-  const broad = await searchPressReleaseUrls(
-    `"${source.name}" プレスリリース 公式 今日 で検索し、本日公開された公式プレスリリース個別URLを最大20件抽出してください。`,
-    "crawl_step_c"
-  );
-  if (sourceId) await logUsage({ purpose: broad.purpose, sourceId, usage: broad.usage });
-  return broad.urls.slice(0, 20);
+  return [
+    `${source.name} の最新プレスリリース個別URLを新しい順に最大 ${count} 件取得してください。`,
+    "以下の手順を順番に実行してください。前の手順で指定件数を取得できた場合は、後続手順は実行しなくて構いません。",
+    `1. ${source.url} を調べ、最新のプレスリリースを取得する`,
+    `2. 指定した数のプレスリリースを取得できなければ、${source.url} のドメイン（${sourceUrl.hostname}）内でWeb検索して最新のプレスリリースを取得する`,
+    `3. それでも指定した数のプレスリリースを取得できなければ、「${source.name} プレスリリース」でWeb検索を行い、最新のプレスリリースを取得する`,
+    "成果物はプレスリリース本文の個別URLだけにしてください。一覧ページ、カテゴリページ、採用情報、問い合わせ、SNS、重複URLは除外してください。",
+    "指定件数に満たない場合でも、取得できた個別URLだけを返してください。"
+  ].join("\n");
+}
+
+async function discoverPressReleaseUrlsWithAi(
+  source: Pick<Source, "name" | "url">,
+  count: number,
+  sourceId?: string
+) {
+  const result = await searchPressReleaseUrls(buildPressReleaseDiscoveryPrompt(source, count), "crawl_step_a");
+  if (sourceId) await logUsage({ purpose: result.purpose, sourceId, usage: result.usage });
+  return [...new Set(result.urls)].slice(0, count);
 }
 
 async function logUsage({
@@ -123,21 +52,17 @@ async function logUsage({
 
 export async function discoverPressReleaseUrls(
   source: Pick<Source, "name" | "url">,
-  sourceId?: string
+  sourceId?: string,
+  count = 20
 ): Promise<string[]> {
-  const directLinks = await discoverLinksFromListing(source.url);
-  if (directLinks.length > 0) return directLinks.slice(0, 20);
-
-  return searchOfficialPressReleaseUrls(source, sourceId);
+  return discoverPressReleaseUrlsWithAi(source, count, sourceId);
 }
 
 export async function summarizeUrlsForPreview(
   source: Pick<Source, "name" | "url">,
   count: number
-): Promise<{ articles: PreviewArticle[]; discovered: number; rejected: number; usedFallback: boolean }> {
-  const directLinks = await discoverLinksFromListing(source.url);
-  const usedInitialFallback = directLinks.length === 0;
-  const links = usedInitialFallback ? await searchOfficialPressReleaseUrls(source) : directLinks;
+): Promise<{ articles: PreviewArticle[]; discovered: number; rejected: number }> {
+  const links = await discoverPressReleaseUrlsWithAi(source, count);
   const articles: PreviewArticle[] = [];
   let rejected = 0;
 
@@ -150,21 +75,7 @@ export async function summarizeUrlsForPreview(
     }
   }
 
-  if (articles.length > 0 || links.length === 0 || usedInitialFallback) {
-    return { articles, discovered: links.length, rejected, usedFallback: usedInitialFallback };
-  }
-
-  const fallbackLinks = (await searchOfficialPressReleaseUrls(source)).filter((url) => !links.includes(url));
-  for (const url of fallbackLinks.slice(0, count)) {
-    const summary = await summarizePressReleaseUrl(url);
-    if (summary.is_press_release) {
-      articles.push({ ...summary, url });
-    } else {
-      rejected += 1;
-    }
-  }
-
-  return { articles, discovered: links.length + fallbackLinks.length, rejected, usedFallback: fallbackLinks.length > 0 };
+  return { articles, discovered: links.length, rejected };
 }
 
 export async function saveSummarizedArticle({
@@ -217,7 +128,7 @@ export async function saveSummarizedArticle({
 
 export async function crawlSource(source: Pick<Source, "id" | "name" | "url">) {
   const supabase = getServiceSupabase();
-  const links = await discoverPressReleaseUrls(source);
+  const links = await discoverPressReleaseUrls(source, source.id, 20);
   const processed: string[] = [];
   const skipped: string[] = [];
 
