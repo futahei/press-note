@@ -83,6 +83,12 @@ create table if not exists llm_usage_logs (
 
 create index if not exists llm_usage_logs_occurred_at_idx on llm_usage_logs (occurred_at desc);
 
+create table if not exists app_runtime_config (
+  key text primary key,
+  value text not null,
+  updated_at timestamptz not null default now()
+);
+
 create or replace view terms_with_article_count
 with (security_invoker = true) as
 select
@@ -113,3 +119,4 @@ alter table reports enable row level security;
 alter table rejected_article_urls enable row level security;
 alter table push_subscriptions enable row level security;
 alter table llm_usage_logs enable row level security;
+alter table app_runtime_config enable row level security;

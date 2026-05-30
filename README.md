@@ -69,6 +69,22 @@ VAPID 鍵は `web-push` で生成できます。
 pnpm exec web-push generate-vapid-keys
 ```
 
+### Supabase Cron の本番設定
+
+Supabase Cron は `app_runtime_config` テーブルから本番 URL と Cron 用シークレットを読みます。Supabase SQL Editor で、Vercel に設定した `APP_ORIGIN` と `CRON_SECRET` と同じ値を登録してください。
+
+```sql
+insert into app_runtime_config (key, value)
+values
+  ('pressnote_origin', 'https://your-app.vercel.app'),
+  ('cron_secret', 'your-cron-secret')
+on conflict (key) do update
+set value = excluded.value,
+    updated_at = now();
+```
+
+`alter database ... set app.pressnote_origin` は Supabase の権限で拒否される場合があるため使いません。
+
 ## 検証
 
 ```bash

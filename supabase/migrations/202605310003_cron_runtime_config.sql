@@ -1,6 +1,42 @@
 create extension if not exists pg_cron;
 create extension if not exists pg_net;
 
+create table if not exists app_runtime_config (
+  key text primary key,
+  value text not null,
+  updated_at timestamptz not null default now()
+);
+
+alter table app_runtime_config enable row level security;
+
+do $$
+begin
+  perform cron.unschedule('pressnote-crawl');
+exception when others then
+  null;
+end $$;
+
+do $$
+begin
+  perform cron.unschedule('pressnote-notify');
+exception when others then
+  null;
+end $$;
+
+do $$
+begin
+  perform cron.unschedule('pressnote-usage-rollup');
+exception when others then
+  null;
+end $$;
+
+do $$
+begin
+  perform cron.unschedule('pressnote-prune');
+exception when others then
+  null;
+end $$;
+
 select cron.schedule(
   'pressnote-crawl',
   '0 21,3,9 * * *',
