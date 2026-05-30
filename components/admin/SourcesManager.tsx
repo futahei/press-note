@@ -11,68 +11,130 @@ type Draft = {
   initialImportCount: number;
 };
 
+type PreviewResponse = {
+  articles: PreviewArticle[];
+  discovered: number;
+  rejected?: number;
+  usedFallback?: boolean;
+};
+
 export function SourcesManager({ sources }: { sources: Source[] }) {
   const router = useRouter();
   const [draft, setDraft] = useState<Draft>({ name: "", url: "", initialImportCount: 0 });
   const [preview, setPreview] = useState<PreviewArticle[]>([]);
   const [message, setMessage] = useState("");
-  const [busy, setBusy] = useState(false);
+  const [busyAction, setBusyAction] = useState<string | null>(null);
+  const busy = busyAction !== null;
+  const busyLabel =
+    busyAction === "preview"
+      ? "候補記事を検索・要約しています"
+      : busyAction === "save"
+        ? "ソースを保存しています"
+        : busyAction?.startsWith("delete:")
+          ? "ソースを削除しています"
+          : busyAction?.startsWith("patch:")
+            ? "ソースを更新しています"
+            : "";
 
   async function previewSource() {
-    setBusy(true);
+    setBusyAction("preview");
     setMessage("");
     setPreview([]);
-    const response = await fetch("/api/admin/sources/preview", {
-      method: "POST",
-      headers: { "content-type": "application/json" },
-      body: JSON.stringify(draft)
-    });
-    setBusy(false);
+    try {
+      const response = await fetch("/api/admin/sources/preview", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify(draft)
+      });
 
-    if (!response.ok) {
+      if (!response.ok) {
+        setMessage("プレビューに失敗しました。URL と OpenAI 設定を確認してください。");
+        return;
+      }
+
+      const data = (await response.json()) as PreviewResponse;
+      setPreview(data.articles);
+      if (data.articles.length === 0 && data.discovered > 0) {
+        setMessage(
+          `${data.discovered} 件の候補を確認しましたが、プレスリリース本文として判定された記事はありませんでした。企業の公式プレスリリース一覧URLか確認してください。`
+        );
+        return;
+      }
+      setMessage(
+        `${data.discovered} 件の候補から ${data.articles.length} 件をプレビューしました。${
+          data.usedFallback ? " 直接候補が一致しなかったため公式検索も確認しました。" : ""
+        }`
+      );
+    } catch {
       setMessage("プレビューに失敗しました。URL と OpenAI 設定を確認してください。");
-      return;
+    } finally {
+      setBusyAction(null);
     }
-
-    const data = (await response.json()) as { articles: PreviewArticle[]; discovered: number };
-    setPreview(data.articles);
-    setMessage(`${data.discovered} 件の候補から ${data.articles.length} 件をプレビューしました。`);
   }
 
   async function saveSource() {
-    setBusy(true);
+    setBusyAction("save");
     setMessage("");
-    const response = await fetch("/api/admin/sources", {
-      method: "POST",
-      headers: { "content-type": "application/json" },
-      body: JSON.stringify({ ...draft, enabled: true, previewArticles: preview })
-    });
-    setBusy(false);
+    try {
+      const response = await fetch("/api/admin/sources", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ ...draft, enabled: true, previewArticles: preview })
+      });
 
-    if (!response.ok) {
+      if (!response.ok) {
+        setMessage("保存に失敗しました。");
+        return;
+      }
+
+      setDraft({ name: "", url: "", initialImportCount: 0 });
+      setPreview([]);
+      setMessage("保存しました。");
+      router.refresh();
+    } catch {
       setMessage("保存に失敗しました。");
-      return;
+    } finally {
+      setBusyAction(null);
     }
-
-    setDraft({ name: "", url: "", initialImportCount: 0 });
-    setPreview([]);
-    setMessage("保存しました。");
-    router.refresh();
   }
 
   async function patchSource(id: string, payload: Partial<Pick<Source, "name" | "url" | "enabled">>) {
-    const response = await fetch(`/api/admin/sources/${id}`, {
-      method: "PATCH",
-      headers: { "content-type": "application/json" },
-      body: JSON.stringify(payload)
-    });
-    if (response.ok) router.refresh();
+    setBusyAction(`patch:${id}`);
+    setMessage("");
+    try {
+      const response = await fetch(`/api/admin/sources/${id}`, {
+        method: "PATCH",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify(payload)
+      });
+      if (response.ok) {
+        router.refresh();
+      } else {
+        setMessage("更新に失敗しました。");
+      }
+    } catch {
+      setMessage("更新に失敗しました。");
+    } finally {
+      setBusyAction(null);
+    }
   }
 
   async function deleteSource(id: string) {
     if (!confirm("このソースを削除しますか。関連する記事も削除されます。")) return;
-    const response = await fetch(`/api/admin/sources/${id}`, { method: "DELETE" });
-    if (response.ok) router.refresh();
+    setBusyAction(`delete:${id}`);
+    setMessage("");
+    try {
+      const response = await fetch(`/api/admin/sources/${id}`, { method: "DELETE" });
+      if (response.ok) {
+        router.refresh();
+      } else {
+        setMessage("削除に失敗しました。");
+      }
+    } catch {
+      setMessage("削除に失敗しました。");
+    } finally {
+      setBusyAction(null);
+    }
   }
 
   return (
@@ -124,6 +186,7 @@ export function SourcesManager({ sources }: { sources: Source[] }) {
               onClick={previewSource}
               disabled={busy || !draft.name || !draft.url || draft.initialImportCount === 0}
             >
+              {busyAction === "preview" ? <span className="loading-spinner" aria-hidden="true" /> : null}
               プレビュー
             </button>
             <button
@@ -132,10 +195,17 @@ export function SourcesManager({ sources }: { sources: Source[] }) {
               onClick={saveSource}
               disabled={busy || !draft.name || !draft.url || (draft.initialImportCount > 0 && preview.length === 0)}
             >
+              {busyAction === "save" ? <span className="loading-spinner" aria-hidden="true" /> : null}
               保存
             </button>
           </div>
         </div>
+        {busyLabel ? (
+          <p className="loading-status" role="status" aria-live="polite">
+            <span className="loading-spinner" aria-hidden="true" />
+            {busyLabel}
+          </p>
+        ) : null}
         {message ? <p className="small" role="status">{message}</p> : null}
         {preview.length > 0 ? (
           <div className="preview-list" aria-label="初回取り込みプレビュー">
@@ -177,10 +247,17 @@ export function SourcesManager({ sources }: { sources: Source[] }) {
                 />
               </label>
               <div className="button-row">
-                <button className="button-secondary" type="button" onClick={() => patchSource(source.id, { enabled: !source.enabled })}>
+                <button
+                  className="button-secondary"
+                  type="button"
+                  disabled={busy}
+                  onClick={() => patchSource(source.id, { enabled: !source.enabled })}
+                >
+                  {busyAction === `patch:${source.id}` ? <span className="loading-spinner" aria-hidden="true" /> : null}
                   {source.enabled ? "無効化" : "有効化"}
                 </button>
-                <button className="button-rect" type="button" onClick={() => deleteSource(source.id)}>
+                <button className="button-rect" type="button" disabled={busy} onClick={() => deleteSource(source.id)}>
+                  {busyAction === `delete:${source.id}` ? <span className="loading-spinner" aria-hidden="true" /> : null}
                   削除
                 </button>
               </div>

@@ -1,4 +1,5 @@
 import { listOpenReports } from "@/lib/data";
+import { SubmitButton } from "@/components/SubmitButton";
 
 export default async function AdminReportsPage() {
   const reports = await listOpenReports();
@@ -22,14 +23,14 @@ export default async function AdminReportsPage() {
                 </a>
               ) : null}
               <form action={`/api/admin/reports/${report.id}/accept`} method="post">
-                <button className="button-rect" type="submit">
+                <SubmitButton className="button-rect" pendingLabel="削除中">
                   記事を削除
-                </button>
+                </SubmitButton>
               </form>
               <form action={`/api/admin/reports/${report.id}/reject`} method="post">
-                <button className="button-secondary" type="submit">
+                <SubmitButton className="button-secondary" pendingLabel="却下中">
                   報告を却下
-                </button>
+                </SubmitButton>
               </form>
             </div>
           </article>

@@ -1,3 +1,5 @@
+import { SubmitButton } from "@/components/SubmitButton";
+
 export default function AdminLoginPage() {
   return (
     <main className="page">
@@ -11,9 +13,9 @@ export default function AdminLoginPage() {
             <span className="small">パスワード</span>
             <input className="input" name="password" type="password" autoComplete="current-password" required />
           </label>
-          <button className="button-primary" type="submit">
+          <SubmitButton className="button-primary" pendingLabel="ログイン中">
             ログイン
-          </button>
+          </SubmitButton>
         </form>
       </section>
     </main>

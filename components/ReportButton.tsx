@@ -31,12 +31,15 @@ export function ReportButton({ articleId }: { articleId: string }) {
 
   async function report() {
     setBusy(true);
-    const response = await fetch(`/api/articles/${articleId}/report`, { method: "POST" });
-    setBusy(false);
-    if (response.ok) {
-      localStorage.setItem(key, "1");
-      setReported(true);
-      setOpen(false);
+    try {
+      const response = await fetch(`/api/articles/${articleId}/report`, { method: "POST" });
+      if (response.ok) {
+        localStorage.setItem(key, "1");
+        setReported(true);
+        setOpen(false);
+      }
+    } finally {
+      setBusy(false);
     }
   }
 
@@ -83,6 +86,7 @@ export function ReportButton({ articleId }: { articleId: string }) {
                 キャンセル
               </button>
               <button className="button-primary" type="button" onClick={report} disabled={busy}>
+                {busy ? <span className="loading-spinner" aria-hidden="true" /> : null}
                 {busy ? "送信中" : "報告する"}
               </button>
             </div>

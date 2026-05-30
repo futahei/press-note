@@ -1,5 +1,6 @@
 import { listTerms } from "@/lib/data";
 import { WordsManager } from "@/components/admin/WordsManager";
+import { SubmitButton } from "@/components/SubmitButton";
 
 export default async function AdminWordsPage() {
   const terms = await listTerms();
@@ -24,9 +25,9 @@ export default async function AdminWordsPage() {
             <span className="small">解説</span>
             <input className="input" name="description" required />
           </label>
-          <button className="button-primary" type="submit">
+          <SubmitButton className="button-primary" pendingLabel="追加中">
             追加
-          </button>
+          </SubmitButton>
         </div>
       </form>
       <WordsManager terms={terms} />
