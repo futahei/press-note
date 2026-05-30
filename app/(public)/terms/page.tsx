@@ -10,6 +10,7 @@ export default async function TermsPage({
 }) {
   const params = await searchParams;
   const terms = await listTerms(params);
+  const selectedInitial = typeof params.initial === "string" ? params.initial : "";
 
   return (
     <main className="page">
@@ -27,7 +28,12 @@ export default async function TermsPage({
           </form>
           <nav className="term-index" aria-label="頭文字">
             {initials.map((initial) => (
-              <Link key={initial} className="chip" href={`/terms?initial=${initial}`}>
+              <Link
+                key={initial}
+                aria-current={selectedInitial === initial ? "page" : undefined}
+                className={selectedInitial === initial ? "chip chip-selected" : "chip"}
+                href={`/terms?initial=${initial}`}
+              >
                 {initial}
               </Link>
             ))}

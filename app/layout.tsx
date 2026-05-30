@@ -19,6 +19,9 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
   return (
     <html lang="ja">
       <body>
+        <a className="skip-link" href="#main-content">
+          本文へ移動
+        </a>
         <header className="global-nav">
           <div className="global-nav-inner">
             <Link className="brand-link" href="/" aria-label="PressNote ホーム">
@@ -44,7 +47,7 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
             </nav>
           </div>
         </header>
-        {children}
+        <div id="main-content">{children}</div>
         <footer className="footer">
           <div className="container">
             <p>PressNote は登録した企業のプレスリリースを収集し、要約と用語解説を保存します。</p>

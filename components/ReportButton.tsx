@@ -1,17 +1,33 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useId, useRef, useState } from "react";
 import { FlagIcon, XIcon } from "@/components/Icons";
 
 export function ReportButton({ articleId }: { articleId: string }) {
   const [reported, setReported] = useState(false);
   const [busy, setBusy] = useState(false);
   const [open, setOpen] = useState(false);
+  const closeButtonRef = useRef<HTMLButtonElement>(null);
+  const titleId = useId();
+  const descriptionId = useId();
   const key = `pressnote:reported:${articleId}`;
 
   useEffect(() => {
     setReported(localStorage.getItem(key) === "1");
   }, [key]);
+
+  useEffect(() => {
+    if (!open) return;
+
+    closeButtonRef.current?.focus();
+
+    function onKeyDown(event: KeyboardEvent) {
+      if (event.key === "Escape") setOpen(false);
+    }
+
+    document.addEventListener("keydown", onKeyDown);
+    return () => document.removeEventListener("keydown", onKeyDown);
+  }, [open]);
 
   async function report() {
     setBusy(true);
@@ -27,6 +43,7 @@ export function ReportButton({ articleId }: { articleId: string }) {
   return (
     <>
       <button
+        aria-haspopup="dialog"
         aria-label={reported ? "報告済み" : "この記事を報告"}
         className="report-icon-button"
         disabled={reported || busy}
@@ -39,7 +56,8 @@ export function ReportButton({ articleId }: { articleId: string }) {
       {open ? (
         <div className="dialog-backdrop" role="presentation" onClick={() => setOpen(false)}>
           <div
-            aria-labelledby={`report-title-${articleId}`}
+            aria-describedby={descriptionId}
+            aria-labelledby={titleId}
             aria-modal="true"
             className="dialog"
             role="dialog"
@@ -48,14 +66,15 @@ export function ReportButton({ articleId }: { articleId: string }) {
             <button
               aria-label="閉じる"
               className="dialog-close"
+              ref={closeButtonRef}
               type="button"
               onClick={() => setOpen(false)}
             >
               <XIcon size={18} />
             </button>
             <div>
-              <h2 id={`report-title-${articleId}`}>この記事を報告しますか</h2>
-              <p>
+              <h2 id={titleId}>この記事を報告しますか</h2>
+              <p id={descriptionId}>
                 この項目がプレスリリースではない場合のみ報告してください。送信後、このブラウザでは同じ記事を再報告できません。
               </p>
             </div>

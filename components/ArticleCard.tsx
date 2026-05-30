@@ -29,8 +29,8 @@ export function ArticleCard({ article }: { article: Article }) {
           <ExternalLinkIcon size={17} />
           <span>本家リンク</span>
         </a>
-        <ReportButton articleId={article.id} />
       </div>
+      <ReportButton articleId={article.id} />
     </article>
   );
 }
