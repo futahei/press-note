@@ -75,6 +75,7 @@ export const fixtureReports: Report[] = [
   {
     id: "eeeeeeee-eeee-4eee-8eee-eeeeeeeeeeee",
     article_id: fixtureArticles[1].id,
+    reason: "not_press_release",
     status: "open",
     created_at: now.toISOString(),
     resolved_at: null,

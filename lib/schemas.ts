@@ -70,6 +70,12 @@ export const sourcePreviewSchema = sourceInputSchema.pick({
   initialImportCount: true
 });
 
+export const reportReasonSchema = z.enum(["not_press_release", "duplicate"]);
+
+export const articleReportSchema = z.object({
+  reason: reportReasonSchema.default("not_press_release")
+});
+
 export const previewArticleSchema = articleSummarySchema.extend({
   url: z.string().url()
 });

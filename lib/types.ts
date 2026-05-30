@@ -33,6 +33,7 @@ export type Term = {
 export type Report = {
   id: string;
   article_id: string;
+  reason: "not_press_release" | "duplicate";
   status: "open" | "accepted" | "rejected";
   created_at: string;
   resolved_at: string | null;

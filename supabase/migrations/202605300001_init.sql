@@ -47,6 +47,7 @@ create index if not exists article_terms_term_id_idx on article_terms (term_id);
 create table if not exists reports (
   id uuid primary key default gen_random_uuid(),
   article_id uuid not null references articles(id) on delete cascade,
+  reason text not null default 'not_press_release' check (reason in ('not_press_release','duplicate')),
   status text not null default 'open' check (status in ('open','accepted','rejected')),
   created_at timestamptz not null default now(),
   resolved_at timestamptz

@@ -3,13 +3,17 @@
 import { useEffect, useId, useRef, useState } from "react";
 import { FlagIcon, XIcon } from "@/components/Icons";
 
+type ReportReason = "not_press_release" | "duplicate";
+
 export function ReportButton({ articleId }: { articleId: string }) {
   const [reported, setReported] = useState(false);
   const [busy, setBusy] = useState(false);
   const [open, setOpen] = useState(false);
+  const [reason, setReason] = useState<ReportReason>("not_press_release");
   const closeButtonRef = useRef<HTMLButtonElement>(null);
   const titleId = useId();
   const descriptionId = useId();
+  const reasonName = useId();
   const key = `pressnote:reported:${articleId}`;
 
   useEffect(() => {
@@ -32,7 +36,11 @@ export function ReportButton({ articleId }: { articleId: string }) {
   async function report() {
     setBusy(true);
     try {
-      const response = await fetch(`/api/articles/${articleId}/report`, { method: "POST" });
+      const response = await fetch(`/api/articles/${articleId}/report`, {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ reason })
+      });
       if (response.ok) {
         localStorage.setItem(key, "1");
         setReported(true);
@@ -78,8 +86,30 @@ export function ReportButton({ articleId }: { articleId: string }) {
             <div>
               <h2 id={titleId}>この記事を報告しますか</h2>
               <p id={descriptionId}>
-                この項目がプレスリリースではない場合のみ報告してください。送信後、このブラウザでは同じ記事を再報告できません。
+                該当する理由を選択してください。送信後、このブラウザでは同じ記事を再報告できません。
               </p>
+            </div>
+            <div className="radio-group" role="radiogroup" aria-label="報告理由">
+              <label className="radio-option">
+                <input
+                  checked={reason === "not_press_release"}
+                  name={reasonName}
+                  type="radio"
+                  value="not_press_release"
+                  onChange={() => setReason("not_press_release")}
+                />
+                <span>プレスリリースではない</span>
+              </label>
+              <label className="radio-option">
+                <input
+                  checked={reason === "duplicate"}
+                  name={reasonName}
+                  type="radio"
+                  value="duplicate"
+                  onChange={() => setReason("duplicate")}
+                />
+                <span>同じ記事がある</span>
+              </label>
             </div>
             <div className="dialog-actions">
               <button className="button-secondary" type="button" onClick={() => setOpen(false)}>

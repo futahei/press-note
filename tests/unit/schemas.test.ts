@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { articleSummarySchema, sourceInputSchema, termInputSchema } from "@/lib/schemas";
+import { articleReportSchema, articleSummarySchema, sourceInputSchema, termInputSchema } from "@/lib/schemas";
 
 describe("schemas", () => {
   it("accepts a valid source input", () => {
@@ -78,5 +78,11 @@ describe("schemas", () => {
         description: "個人情報を直接共有せずに分析する環境です。"
       }).source_kind
     ).toBe("manual");
+  });
+
+  it("accepts report reasons", () => {
+    expect(articleReportSchema.parse({ reason: "duplicate" }).reason).toBe("duplicate");
+    expect(articleReportSchema.parse({}).reason).toBe("not_press_release");
+    expect(() => articleReportSchema.parse({ reason: "other" })).toThrow();
   });
 });
