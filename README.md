@@ -61,6 +61,8 @@ openssl rand -hex 32
 node -e "const bcrypt=require('bcryptjs'); bcrypt.hash('ここに管理パスワード', 12).then(console.log)"
 ```
 
+bcrypt ハッシュには `$` が含まれます。Next.js の `.env` は `$` を変数展開するため、`.env` に直接貼る場合は `$` を `\$` に置き換えてください。Vercel などの環境変数 UI に入力する場合は通常そのままで問題ありません。
+
 VAPID 鍵は `web-push` で生成できます。
 
 ```bash
