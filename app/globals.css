@@ -53,14 +53,16 @@ button {
   position: sticky;
   top: 0;
   z-index: 40;
-  height: 44px;
-  background: var(--color-black);
-  color: #fff;
+  height: 52px;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+  background: color-mix(in srgb, var(--color-parchment) 86%, transparent);
+  color: var(--color-ink);
+  backdrop-filter: saturate(180%) blur(20px);
 }
 
 .global-nav-inner {
   display: flex;
-  height: 44px;
+  height: 52px;
   align-items: center;
   justify-content: space-between;
   gap: 20px;
@@ -71,49 +73,64 @@ button {
   line-height: 1;
 }
 
+.brand-link {
+  display: inline-flex;
+  min-width: 0;
+  align-items: center;
+  gap: 10px;
+  font-size: 17px;
+  font-weight: 600;
+}
+
+.brand-icon {
+  display: block;
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
+}
+
+.brand-wordmark {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .nav-links {
   display: flex;
   align-items: center;
-  gap: 20px;
+  gap: 6px;
 }
 
-.sub-nav {
-  position: sticky;
-  top: 44px;
-  z-index: 30;
-  height: 52px;
-  border-bottom: 1px solid rgba(0, 0, 0, 0.08);
-  background: color-mix(in srgb, var(--color-parchment) 84%, transparent);
-  backdrop-filter: saturate(180%) blur(20px);
-}
-
-.sub-nav-inner {
-  display: flex;
-  height: 52px;
+.nav-icon-link {
+  display: inline-flex;
+  width: 36px;
+  height: 36px;
   align-items: center;
-  justify-content: space-between;
-  gap: 24px;
-  max-width: 1068px;
-  margin: 0 auto;
-  padding: 0 20px;
-}
-
-.brand {
-  font-size: 21px;
-  font-weight: 600;
-  line-height: 1.19;
-}
-
-.sub-links {
-  display: flex;
-  align-items: center;
-  gap: 18px;
+  justify-content: center;
+  border-radius: 9999px;
   color: #333;
-  font-size: 14px;
+  transition:
+    background-color 120ms ease,
+    transform 120ms ease;
+}
+
+.nav-icon-link:active {
+  transform: scale(0.95);
+}
+
+.nav-icon-link:focus-visible {
+  outline: 2px solid var(--color-primary-focus);
+  outline-offset: 2px;
+}
+
+@media (hover: hover) {
+  .nav-icon-link:hover {
+    background: rgba(0, 0, 0, 0.06);
+  }
 }
 
 .page {
-  min-height: calc(100vh - 96px);
+  min-height: calc(100vh - 52px);
 }
 
 .tile {
@@ -224,6 +241,7 @@ button {
 .button-secondary,
 .button-rect {
   display: inline-flex;
+  gap: 8px;
   min-height: 44px;
   align-items: center;
   justify-content: center;
@@ -269,6 +287,93 @@ button {
   font-size: 14px;
 }
 
+.report-icon-button,
+.dialog-close {
+  display: inline-flex;
+  width: 36px;
+  height: 36px;
+  align-items: center;
+  justify-content: center;
+  border: 0;
+  border-radius: 9999px;
+  background: transparent;
+  color: var(--color-muted);
+  transition:
+    background-color 120ms ease,
+    color 120ms ease,
+    transform 120ms ease;
+}
+
+.report-icon-button:active,
+.dialog-close:active {
+  transform: scale(0.95);
+}
+
+.report-icon-button:focus-visible,
+.dialog-close:focus-visible {
+  outline: 2px solid var(--color-primary-focus);
+  outline-offset: 2px;
+}
+
+.report-icon-button:disabled {
+  cursor: default;
+  opacity: 0.45;
+}
+
+@media (hover: hover) {
+  .report-icon-button:not(:disabled):hover,
+  .dialog-close:hover {
+    background: rgba(0, 0, 0, 0.06);
+    color: var(--color-ink);
+  }
+}
+
+.dialog-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: grid;
+  place-items: center;
+  background: rgba(0, 0, 0, 0.28);
+  padding: 20px;
+}
+
+.dialog {
+  position: relative;
+  display: grid;
+  width: min(100%, 440px);
+  gap: 20px;
+  border: 1px solid var(--color-hairline);
+  border-radius: 18px;
+  background: var(--color-canvas);
+  padding: 28px;
+}
+
+.dialog h2 {
+  margin: 0 38px 8px 0;
+  font-size: 24px;
+  font-weight: 600;
+  line-height: 1.24;
+}
+
+.dialog p {
+  margin: 0;
+  color: #333;
+}
+
+.dialog-close {
+  position: absolute;
+  top: 14px;
+  right: 14px;
+}
+
+.dialog-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
 .text-link {
   color: var(--color-primary);
 }
@@ -301,7 +406,7 @@ button {
 .admin-layout {
   display: grid;
   grid-template-columns: 240px minmax(0, 1fr);
-  min-height: calc(100vh - 44px);
+  min-height: calc(100vh - 52px);
 }
 
 .admin-sidebar {
@@ -412,11 +517,6 @@ button {
 }
 
 @media (max-width: 834px) {
-  .nav-links,
-  .sub-links .optional {
-    display: none;
-  }
-
   .tile {
     padding: 56px 20px;
   }
@@ -440,6 +540,23 @@ button {
 }
 
 @media (max-width: 640px) {
+  .global-nav-inner {
+    padding: 0 12px;
+  }
+
+  .brand-wordmark {
+    display: none;
+  }
+
+  .nav-links {
+    gap: 2px;
+  }
+
+  .nav-icon-link {
+    width: 34px;
+    height: 34px;
+  }
+
   .grid,
   .stat-grid,
   .form-grid {

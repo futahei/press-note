@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { ExternalLinkIcon } from "@/components/Icons";
 import type { Article } from "@/lib/types";
 import { ReportButton } from "@/components/ReportButton";
 
@@ -25,7 +26,8 @@ export function ArticleCard({ article }: { article: Article }) {
       <p>{article.summary}</p>
       <div className="article-actions">
         <a className="button-secondary" href={article.url} target="_blank" rel="noopener">
-          本家リンク ↗
+          <ExternalLinkIcon size={17} />
+          <span>本家リンク</span>
         </a>
         <ReportButton articleId={article.id} />
       </div>

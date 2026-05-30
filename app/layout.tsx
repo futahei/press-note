@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { ArchiveIcon, BellIcon, BookIcon, HomeIcon, ShieldIcon } from "@/components/Icons";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -7,7 +8,11 @@ export const metadata: Metadata = {
     default: "PressNote",
     template: "%s | PressNote"
   },
-  description: "企業プレスリリースの要約と用語解説を毎日確認できるアーカイブ"
+  description: "企業プレスリリースの要約と用語解説を毎日確認できるアーカイブ",
+  icons: {
+    icon: "/icon.png",
+    apple: "/icon.png"
+  }
 };
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
@@ -16,35 +21,29 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
       <body>
         <header className="global-nav">
           <div className="global-nav-inner">
-            <Link href="/" aria-label="PressNote ホーム">
-              PressNote
+            <Link className="brand-link" href="/" aria-label="PressNote ホーム">
+              <img alt="" className="brand-icon" height="28" src="/icon.png" width="28" />
+              <span className="brand-wordmark">PressNote</span>
             </Link>
-            <nav className="nav-links" aria-label="グローバル">
-              <Link href="/articles">記事</Link>
-              <Link href="/terms">用語帳</Link>
-              <Link href="/settings">通知設定</Link>
-              <Link href="/admin">管理</Link>
+            <nav className="nav-links" aria-label="主要ナビゲーション">
+              <Link className="nav-icon-link" href="/" aria-label="ホーム" title="ホーム">
+                <HomeIcon />
+              </Link>
+              <Link className="nav-icon-link" href="/articles" aria-label="過去記事" title="過去記事">
+                <ArchiveIcon />
+              </Link>
+              <Link className="nav-icon-link" href="/terms" aria-label="用語帳" title="用語帳">
+                <BookIcon />
+              </Link>
+              <Link className="nav-icon-link" href="/settings" aria-label="通知設定" title="通知設定">
+                <BellIcon />
+              </Link>
+              <Link className="nav-icon-link" href="/admin" aria-label="管理" title="管理">
+                <ShieldIcon />
+              </Link>
             </nav>
           </div>
         </header>
-        <div className="sub-nav">
-          <div className="sub-nav-inner">
-            <Link className="brand" href="/">
-              PressNote
-            </Link>
-            <nav className="sub-links" aria-label="セクション">
-              <Link className="optional" href="/articles">
-                過去記事
-              </Link>
-              <Link className="optional" href="/terms">
-                用語帳
-              </Link>
-              <Link className="button-primary" href="/settings">
-                通知
-              </Link>
-            </nav>
-          </div>
-        </div>
         {children}
         <footer className="footer">
           <div className="container">
