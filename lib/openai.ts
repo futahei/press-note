@@ -9,7 +9,10 @@ const summaryJsonSchema = {
   properties: {
     title: { type: "string" },
     summary: { type: "string", maxLength: 100 },
-    published_at: { anyOf: [{ type: "string" }, { type: "null" }] },
+    published_at: {
+      anyOf: [{ type: "string" }, { type: "null" }],
+      description: "公開日時。取得できる場合は ISO 8601 datetime with timezone、取得できない場合は null。"
+    },
     is_press_release: { type: "boolean" },
     terms: {
       type: "array",
@@ -123,7 +126,7 @@ export async function summarizePressReleaseUrl(
         {
           role: "system",
           content:
-            "あなたは日本語のプレスリリース編集者です。記事本文を確認し、プレスリリースだけを100文字以内で要約し、読者がつまずく専門用語を抽出してください。"
+            "あなたは日本語のプレスリリース編集者です。記事本文を確認し、プレスリリースだけを100文字以内で要約し、読者がつまずく専門用語を抽出してください。published_at は ISO 8601 datetime with timezone で返し、公開日時が取得できない場合は null にしてください。"
         },
         {
           role: "user",

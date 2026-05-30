@@ -24,6 +24,40 @@ describe("schemas", () => {
     ).toThrow();
   });
 
+  it("normalizes loose published_at values from AI output", () => {
+    expect(
+      articleSummarySchema.parse({
+        title: "title",
+        summary: "summary",
+        published_at: "2026-05-30",
+        is_press_release: true,
+        terms: []
+      }).published_at
+    ).toBe("2026-05-30T00:00:00.000Z");
+
+    expect(
+      articleSummarySchema.parse({
+        title: "title",
+        summary: "summary",
+        published_at: "2026年5月30日",
+        is_press_release: true,
+        terms: []
+      }).published_at
+    ).toBe("2026-05-30T00:00:00.000Z");
+  });
+
+  it("treats unknown published_at values as null", () => {
+    expect(
+      articleSummarySchema.parse({
+        title: "title",
+        summary: "summary",
+        published_at: "不明",
+        is_press_release: true,
+        terms: []
+      }).published_at
+    ).toBeNull();
+  });
+
   it("accepts manual terms", () => {
     expect(
       termInputSchema.parse({
