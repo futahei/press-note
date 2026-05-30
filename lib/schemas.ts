@@ -39,7 +39,7 @@ export function normalizePublishedAt(value: unknown) {
 
 export const articleSummarySchema = z.object({
   title: z.string().trim().min(1),
-  summary: z.string().trim().min(1).max(100),
+  summary: z.string().trim().min(1).max(120),
   published_at: z.preprocess(normalizePublishedAt, z.string().datetime().nullable()),
   is_press_release: z.boolean(),
   terms: z

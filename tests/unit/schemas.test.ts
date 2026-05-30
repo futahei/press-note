@@ -12,16 +12,28 @@ describe("schemas", () => {
     ).toBe(5);
   });
 
-  it("rejects summaries over 100 characters", () => {
+  it("rejects summaries over 120 characters", () => {
     expect(() =>
       articleSummarySchema.parse({
         title: "title",
-        summary: "あ".repeat(101),
+        summary: "あ".repeat(121),
         published_at: null,
         is_press_release: true,
         terms: []
       })
     ).toThrow();
+  });
+
+  it("accepts summaries around 100 characters", () => {
+    expect(
+      articleSummarySchema.parse({
+        title: "title",
+        summary: "あ".repeat(110),
+        published_at: null,
+        is_press_release: true,
+        terms: []
+      }).summary.length
+    ).toBe(110);
   });
 
   it("normalizes loose published_at values from AI output", () => {

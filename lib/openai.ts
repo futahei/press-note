@@ -8,7 +8,12 @@ const summaryJsonSchema = {
   required: ["title", "summary", "published_at", "is_press_release", "terms"],
   properties: {
     title: { type: "string" },
-    summary: { type: "string", maxLength: 100 },
+    summary: {
+      type: "string",
+      minLength: 80,
+      maxLength: 120,
+      description: "記事本文の要約。日本語で90〜110文字程度。"
+    },
     published_at: {
       anyOf: [{ type: "string" }, { type: "null" }],
       description: "公開日時。取得できる場合は ISO 8601 datetime with timezone、取得できない場合は null。"
@@ -116,6 +121,8 @@ export async function summarizePressReleaseUrl(
   const model = env("OPENAI_MODEL") ?? "gpt-5.5";
   let lastResult: ArticleSummaryOutput | null = null;
   let lastUsage = { input_tokens: 0, output_tokens: 0, cost_usd: 0 };
+  const minSummaryLength = 80;
+  const maxSummaryLength = 120;
 
   for (let attempt = 0; attempt < 3; attempt += 1) {
     const payload = await createResponse({
@@ -126,11 +133,11 @@ export async function summarizePressReleaseUrl(
         {
           role: "system",
           content:
-            "あなたは日本語のプレスリリース編集者です。記事本文を確認し、プレスリリースだけを100文字以内で要約し、読者がつまずく専門用語を抽出してください。published_at は ISO 8601 datetime with timezone で返し、公開日時が取得できない場合は null にしてください。"
+            "あなたは日本語のプレスリリース編集者です。記事本文を確認し、プレスリリースだけを日本語90〜110文字程度で要約し、読者がつまずく専門用語を抽出してください。summary は短すぎる箇条書きではなく、本文の要点が分かる1〜2文にしてください。published_at は ISO 8601 datetime with timezone で返し、公開日時が取得できない場合は null にしてください。"
         },
         {
           role: "user",
-          content: `次のURLの本文を取得し、100文字以内の要約と専門用語を抽出してください: ${url}`
+          content: `次のURLの本文を取得し、90〜110文字程度の要約と専門用語を抽出してください: ${url}`
         }
       ],
       text: {
@@ -144,7 +151,7 @@ export async function summarizePressReleaseUrl(
     });
     lastUsage = usageFrom(payload);
     lastResult = articleSummarySchema.parse(JSON.parse(extractText(payload)));
-    if (lastResult.summary.length <= 100) {
+    if (lastResult.summary.length >= minSummaryLength && lastResult.summary.length <= maxSummaryLength) {
       return { ...lastResult, usage: lastUsage };
     }
   }
@@ -153,7 +160,7 @@ export async function summarizePressReleaseUrl(
     throw new Error("OpenAI summary failed");
   }
 
-  return { ...lastResult, summary: lastResult.summary.slice(0, 100), usage: lastUsage };
+  return { ...lastResult, summary: lastResult.summary.slice(0, maxSummaryLength), usage: lastUsage };
 }
 
 export async function searchPressReleaseUrls(
