@@ -83,7 +83,8 @@ create table if not exists llm_usage_logs (
 
 create index if not exists llm_usage_logs_occurred_at_idx on llm_usage_logs (occurred_at desc);
 
-create or replace view terms_with_article_count as
+create or replace view terms_with_article_count
+with (security_invoker = true) as
 select
   t.*,
   count(at.article_id)::integer as article_count
@@ -92,7 +93,8 @@ left join article_terms at on at.term_id = t.id
 left join articles a on a.id = at.article_id and a.is_deleted = false
 group by t.id;
 
-create or replace view llm_usage_daily as
+create or replace view llm_usage_daily
+with (security_invoker = true) as
 select
   date_trunc('day', occurred_at)::date as usage_date,
   model,
