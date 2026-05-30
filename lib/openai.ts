@@ -119,48 +119,33 @@ export async function summarizePressReleaseUrl(
   url: string
 ): Promise<ArticleSummaryOutput & { usage: ReturnType<typeof usageFrom> }> {
   const model = env("OPENAI_MODEL") ?? "gpt-5.5";
-  let lastResult: ArticleSummaryOutput | null = null;
-  let lastUsage = { input_tokens: 0, output_tokens: 0, cost_usd: 0 };
-  const minSummaryLength = 80;
-  const maxSummaryLength = 120;
-
-  for (let attempt = 0; attempt < 3; attempt += 1) {
-    const payload = await createResponse({
-      model,
-      tools: [{ type: "web_search" }],
-      tool_choice: "required",
-      input: [
-        {
-          role: "system",
-          content:
-            "あなたは日本語のプレスリリース編集者です。記事本文を確認し、プレスリリースだけを日本語90〜110文字程度で要約し、読者がつまずく専門用語を抽出してください。summary は短すぎる箇条書きではなく、本文の要点が分かる1〜2文にしてください。published_at は ISO 8601 datetime with timezone で返し、公開日時が取得できない場合は null にしてください。"
-        },
-        {
-          role: "user",
-          content: `次のURLの本文を取得し、90〜110文字程度の要約と専門用語を抽出してください: ${url}`
-        }
-      ],
-      text: {
-        format: {
-          type: "json_schema",
-          name: "press_release_summary",
-          schema: summaryJsonSchema,
-          strict: true
-        }
+  const payload = await createResponse({
+    model,
+    tools: [{ type: "web_search" }],
+    tool_choice: "required",
+    input: [
+      {
+        role: "system",
+        content:
+          "あなたは日本語のプレスリリース編集者です。記事本文を確認し、プレスリリースだけを日本語90〜110文字程度で要約し、読者がつまずく専門用語を抽出してください。summary は短すぎる箇条書きではなく、本文の要点が分かる1〜2文にしてください。published_at は ISO 8601 datetime with timezone で返し、公開日時が取得できない場合は null にしてください。"
+      },
+      {
+        role: "user",
+        content: `次のURLの本文を取得し、90〜110文字程度の要約と専門用語を抽出してください: ${url}`
       }
-    });
-    lastUsage = usageFrom(payload);
-    lastResult = articleSummarySchema.parse(JSON.parse(extractText(payload)));
-    if (lastResult.summary.length >= minSummaryLength && lastResult.summary.length <= maxSummaryLength) {
-      return { ...lastResult, usage: lastUsage };
+    ],
+    text: {
+      format: {
+        type: "json_schema",
+        name: "press_release_summary",
+        schema: summaryJsonSchema,
+        strict: true
+      }
     }
-  }
+  });
+  const result = articleSummarySchema.parse(JSON.parse(extractText(payload)));
 
-  if (!lastResult) {
-    throw new Error("OpenAI summary failed");
-  }
-
-  return { ...lastResult, summary: lastResult.summary.slice(0, maxSummaryLength), usage: lastUsage };
+  return { ...result, usage: usageFrom(payload) };
 }
 
 export async function searchPressReleaseUrls(
