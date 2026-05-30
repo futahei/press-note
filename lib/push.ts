@@ -28,7 +28,13 @@ export async function sendDailyNotification() {
 
   const count = articles?.length ?? 0;
   const names = [
-    ...new Set((articles ?? []).flatMap((article: { source?: { name?: string } }) => article.source?.name ?? []))
+    ...new Set(
+      (articles ?? []).flatMap((article) => {
+        const source = article.source as { name?: string } | { name?: string }[] | null | undefined;
+        if (Array.isArray(source)) return source.flatMap((item) => item.name ?? []);
+        return source?.name ? [source.name] : [];
+      })
+    )
   ].slice(0, 3);
   const payload = JSON.stringify({
     title: "最新のプレスリリース",
