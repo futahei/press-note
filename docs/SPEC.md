@@ -14,9 +14,9 @@
 | 用語                    | 定義                                                                                  |
 | ----------------------- | ------------------------------------------------------------------------------------- |
 | **ソース (Source)**     | 監視対象となる企業のプレスリリースサイト。`企業名` と `プレスリリース一覧 URL` を持つ |
-| **記事 (Article)**      | クロールで取得した個別プレスリリース。AI による 100 文字要約を持つ                    |
+| **記事 (Article)**      | クロールで取得した個別プレスリリース。AI による 90〜110 文字程度の要約を持つ          |
 | **用語 (Term)**         | 記事から AI が自動抽出した専門用語。`見出し語` `読み方` `解説` `関連記事` を持つ      |
-| **報告 (Report)**       | 「プレスリリースではない」とユーザーが申告した記事への通知                            |
+| **報告 (Report)**       | ユーザーが「プレスリリースではない」または「同じ記事がある」と申告した記事への通知    |
 | **購読 (Subscription)** | Web Push の購読情報（endpoint, keys）                                                 |
 
 ---
@@ -33,10 +33,10 @@
 - 各カードに表示する要素:
   - 企業名
   - プレスタイトル
-  - 100 文字要約
+  - 90〜110 文字程度の要約
   - 本家リンク（外部リンクアイコン付き、`target="_blank" rel="noopener"`）
   - 公開日時
-  - 「プレスリリースではない」報告ボタン
+  - 報告アイコン（理由: 「プレスリリースではない」/「同じ記事がある」）
 - 「過去の記事を見る」リンクで `/articles` へ
 - 通知購読バナー（未購読時のみ表示）
 
@@ -51,7 +51,7 @@
 
 - 企業名・タイトル・要約・公開日時・本家リンク
 - **記事から抽出された用語のチップ一覧**（クリックで `/terms/[id]` へ）
-- 「プレスリリースではない」報告ボタン（送信は 1 ブラウザ 1 回まで、`localStorage` で抑止）
+- 報告アイコン（理由: 「プレスリリースではない」/「同じ記事がある」。送信は 1 ブラウザ 1 回まで、`localStorage` で抑止）
 
 #### 2.1.4 用語帳 `/terms`
 
@@ -75,7 +75,7 @@
 
 - パスワード入力（1 フィールド）
 - 成功時、HTTP-Only Cookie に JWT を保存（有効期限 90 日、`SameSite=Lax`）
-- パスワードは環境変数 `ADMIN_PASSWORD` と bcrypt 比較
+- パスワードは環境変数 `ADMIN_PASSWORD_HASH` の bcrypt ハッシュと比較
 
 #### 2.2.2 管理ダッシュボード `/admin`
 
@@ -90,7 +90,7 @@
   - 企業名（必須）
   - プレスリリース一覧 URL（必須、URL バリデーション）
   - **初回取り込み件数オプション**: 0/5/10/20 件（0 = 即時取り込みなし）
-  - 登録ボタン押下時、選択件数ぶんを同期的に取得・要約してプレビュー表示 → 確定で保存
+  - プレビューボタン押下時、選択件数ぶんを同期的に取得・要約してプレビュー表示 → 確定で保存
 - 編集・削除
 
 #### 2.2.4 用語管理 `/admin/words`
@@ -102,7 +102,7 @@
 
 #### 2.2.5 報告管理 `/admin/reports`
 
-- 未対応の報告一覧（記事タイトル・要約・報告日時・本家リンク）
+- 未対応の報告一覧（報告理由・記事タイトル・要約・報告日時・本家リンク）
 - 「記事を削除」（記事と関連用語紐付けを削除、URL は重複検知用にブラックリスト化）
 - 「報告を却下」（記事は残し、報告のみクローズ）
 
@@ -114,10 +114,11 @@
 
 #### 2.3.1 クロール（1 日 3 回: 06:00 / 12:00 / 18:00 JST）
 
-- 各有効ソースに対して以下を実行:
-  1. **一覧 URL を直接探索**（HTML パースで a タグの URL を収集）
-  2. 取得できない / 0 件の場合、**公式ドメイン内検索** を OpenAI Responses API + `web_search` ツールで実行
-  3. それでも不足なら、**「企業名 + プレスリリース」で Web 検索**
+- 各有効ソースに対して OpenAI Responses API + `web_search` ツールで以下の手順を 1 プロンプト内に明示して実行:
+  1. 登録 URL を調べ、ページ本文の主コンテンツ領域にある記事一覧・リスト・カードから最新のプレスリリースを取得
+  2. 指定件数に満たなければ、登録 URL のドメイン内で Web 検索して最新のプレスリリースを取得
+  3. それでも指定件数に満たなければ、「企業名 プレスリリース」で Web 検索して最新のプレスリリースを取得
+- ヘッダー、グローバルナビ、フッター、サイドバー、関連記事、別カテゴリのニュースリンクにある URL は除外する
 - 取得した URL のうち、`articles.url` に存在しないもののみ AI 要約処理へ
 - 1 ソースあたり最大 20 件 / 回でレート制限
 - 1 リクエスト = 1 ソース。Function 内処理は 10 秒以内に収める（記事数が多い場合は次回 Cron に持ち越し）
@@ -132,7 +133,7 @@
   ```json
   {
     "title": "string",
-    "summary": "string (100文字、句点込み、超過は切り詰めず再生成)",
+    "summary": "string (日本語90〜110文字程度、最大120文字)",
     "published_at": "ISO8601 or null",
     "is_press_release": "boolean",
     "terms": [
@@ -141,6 +142,7 @@
   }
   ```
 
+- `published_at` は ISO8601 datetime を期待する。AI が `YYYY-MM-DD` や `YYYY年M月D日` を返した場合は保存前に ISO8601 へ正規化し、不明値は `null` にする
 - `is_press_release=false` のものは保存しない
 - 用語は `headword` 一致で既存とマージ（説明は既存を優先）
 
@@ -153,7 +155,9 @@
 
 #### 2.3.4 LLM 使用ログの集計（日次）
 
-- 0:05 JST に前日分の `llm_usage_logs` を集計し、`/admin` のグラフ用に統計テーブルへ書き込む（または View を提供）
+- `llm_usage_logs` を日次集計する `llm_usage_daily` View を提供する
+- `llm_usage_daily` は `security_invoker = true` で作成する
+- `/api/cron/usage-rollup` は Cron 疎通確認用の API として残し、View 自体は自動集計される
 - グラフは Recharts 等で日次コスト（USD）を棒グラフ表示、月次合計を併記
 
 ### 2.4 通知購読フロー
@@ -223,11 +227,14 @@
 | `OPENAI_MODEL`                           | 使用モデル（既定: `gpt-5.5`）                                                      |
 | `SUPABASE_URL`                           | Supabase プロジェクト URL                                                          |
 | `SUPABASE_SERVICE_ROLE_KEY`              | サーバー専用キー（クライアント露出禁止）                                           |
-| `NEXT_PUBLIC_SUPABASE_URL`               | 公開クライアント用 URL                                                             |
-| `NEXT_PUBLIC_SUPABASE_ANON_KEY`          | 公開クライアント用 anon key                                                        |
+| `NEXT_PUBLIC_SUPABASE_URL`               | 必要時のみ。現状はブラウザから Supabase を直接利用しないため本番必須ではない       |
+| `NEXT_PUBLIC_SUPABASE_ANON_KEY`          | 必要時のみ。現状はブラウザから Supabase を直接利用しないため本番必須ではない       |
 | `VAPID_PUBLIC_KEY` / `VAPID_PRIVATE_KEY` | Web Push VAPID 鍵                                                                  |
 | `VAPID_SUBJECT`                          | 連絡先メール（`mailto:...`）                                                       |
 | `CRON_SECRET`                            | Supabase Cron (pg_net) から `/api/cron/*` を呼び出す際の Bearer 認証用シークレット |
+| `APP_ORIGIN`                             | 本番オリジン。管理 API の Origin チェックに使用                                    |
+
+Supabase Cron は DB パラメータではなく `app_runtime_config` テーブルから `pressnote_origin` と `cron_secret` を読み出す。値は Supabase SQL Editor またはマイグレーション後の SQL で登録する。
 
 ---
 
@@ -250,7 +257,7 @@ create table articles (
   source_id uuid not null references sources(id) on delete cascade,
   url text not null unique,         -- 重複検知キー
   title text not null,
-  summary text not null,            -- 100字要約
+  summary text not null check (char_length(summary) <= 120), -- 90〜110字程度の要約
   published_at timestamptz,
   fetched_at timestamptz not null default now(),
   is_deleted boolean not null default false  -- 報告で削除されたら true（URLはブラックリスト維持）
@@ -265,6 +272,7 @@ create table terms (
   reading text not null,            -- ひらがな or カタカナ
   description text not null,
   source_kind text not null check (source_kind in ('ai','manual')),
+  status text not null default 'published' check (status in ('published')),
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
 );
@@ -282,9 +290,18 @@ create index on article_terms (term_id);
 create table reports (
   id uuid primary key default gen_random_uuid(),
   article_id uuid not null references articles(id) on delete cascade,
+  reason text not null default 'not_press_release' check (reason in ('not_press_release','duplicate')),
   status text not null default 'open' check (status in ('open','accepted','rejected')),
   created_at timestamptz not null default now(),
   resolved_at timestamptz
+);
+create unique index on reports (article_id) where status = 'open';
+
+-- 報告承認済み / AI 判定除外 URL
+create table rejected_article_urls (
+  url text primary key,
+  article_id uuid references articles(id) on delete set null,
+  created_at timestamptz not null default now()
 );
 
 -- 通知購読
@@ -309,7 +326,20 @@ create table llm_usage_logs (
   article_id uuid references articles(id) on delete set null
 );
 create index on llm_usage_logs (occurred_at desc);
-create index on llm_usage_logs (date_trunc('day', occurred_at));
+
+-- Supabase Cron 実行時の本番 URL / Cron secret
+create table app_runtime_config (
+  key text primary key,
+  value text not null,
+  updated_at timestamptz not null default now()
+);
+
+-- 用語一覧と LLM 使用量集計は security_invoker view として提供
+create view terms_with_article_count
+with (security_invoker = true) as ...;
+
+create view llm_usage_daily
+with (security_invoker = true) as ...;
 ```
 
 容量見積もり: 1 日 ~2,000 行 × 200 byte ≈ 400KB/日 = **150MB/年**。Supabase Free Tier (500MB) の 1/3 以内に収まる。
@@ -328,7 +358,7 @@ create index on llm_usage_logs (date_trunc('day', occurred_at));
 | GET      | `/api/articles/:id`        | 記事詳細 + 関連用語                               |
 | GET      | `/api/terms`               | 用語一覧（`?initial=あ&q=`）                      |
 | GET      | `/api/terms/:id`           | 用語詳細 + 関連記事                               |
-| POST     | `/api/articles/:id/report` | 「プレスではない」報告                            |
+| POST     | `/api/articles/:id/report` | 記事報告。body: `{ reason: "not_press_release" \| "duplicate" }` |
 | POST     | `/api/push/subscribe`      | プッシュ通知購読登録                              |
 | DELETE   | `/api/push/subscribe`      | 購読解除                                          |
 
@@ -365,8 +395,13 @@ create index on llm_usage_logs (date_trunc('day', occurred_at));
 create extension if not exists pg_cron;
 create extension if not exists pg_net;
 
--- アプリ用シークレットを Postgres 設定で保持
--- (Supabase Dashboard の Vault で管理し、ジョブから読み出す)
+-- Cron は app_runtime_config から本番 URL とシークレットを読み出す。
+-- Supabase SQL Editor で以下を設定する:
+-- insert into app_runtime_config (key, value)
+-- values
+--   ('pressnote_origin', 'https://pressnote.vercel.app'),
+--   ('cron_secret', 'your-cron-secret')
+-- on conflict (key) do update set value = excluded.value, updated_at = now();
 
 -- クロール: 06/12/18 JST = 21/03/09 UTC
 -- 有効な各ソースに対して 1 リクエスト発火
@@ -374,25 +409,26 @@ select cron.schedule(
   'pressnote-crawl',
   '0 21,3,9 * * *',
   $$
-  select net.http_get(
-    url := 'https://pressnote.vercel.app/api/cron/crawl?source=' || s.id::text,
-    headers := jsonb_build_object('Authorization', 'Bearer ' || (select decrypted_secret from vault.decrypted_secrets where name='cron_secret'))
+  with config as (
+    select
+      max(value) filter (where key = 'pressnote_origin') as origin,
+      max(value) filter (where key = 'cron_secret') as secret
+    from public.app_runtime_config
+    where key in ('pressnote_origin', 'cron_secret')
   )
-  from sources s where s.enabled = true;
+  select net.http_get(
+    url := rtrim(config.origin, '/') || '/api/cron/crawl?source=' || s.id::text,
+    headers := jsonb_build_object('Authorization', 'Bearer ' || config.secret)
+  )
+  from sources s
+  cross join config
+  where s.enabled = true
+    and config.origin is not null
+    and config.secret is not null;
   $$
 );
 
--- 朝 8 時通知
-select cron.schedule(
-  'pressnote-notify',
-  '0 23 * * *',
-  $$
-  select net.http_get(
-    url := 'https://pressnote.vercel.app/api/cron/notify',
-    headers := jsonb_build_object('Authorization', 'Bearer ' || (select decrypted_secret from vault.decrypted_secrets where name='cron_secret'))
-  );
-  $$
-);
+-- notify / usage-rollup / prune も同様に app_runtime_config から origin と secret を読む。
 ```
 
 ---
@@ -405,20 +441,28 @@ select cron.schedule(
 - 必ず `tools: [{ type: "web_search" }]`, `tool_choice: "required"` を指定
 - 出力は Structured Output（JSON Schema）で受け取り、Zod で再検証
 
-### 7.2 段階的探索（クロール時）
+### 7.2 AI 主導の段階的探索（クロール時）
 
-1. **Step A: 一覧 URL 直接探索**
-   - プロンプト: 「次の URL（一覧ページ）から、本日公開のプレスリリースの個別 URL を列挙して」
-   - 入力に `sources.url` を渡す
-2. **Step B: 公式ドメイン検索**（Step A が 0 件 or 失敗時）
-   - プロンプト: 「`site:example.com` に絞って今日のプレスリリースを検索」
-3. **Step C: 一般 Web 検索**（Step B も不足時）
-   - プロンプト: 「`"<企業名>" プレスリリース` を検索し、今日付の公式記事 URL を抽出」
+探索は HTML パースではなく、OpenAI Responses API + `web_search` ツールに以下の手順を 1 プロンプトで指示する。
+
+1. 登録 URL を調べ、ページ本文の主コンテンツ領域にある記事一覧・リスト・カードから最新のプレスリリース個別 URL を取得
+2. 指定件数に満たなければ、登録 URL のドメイン内で Web 検索して最新のプレスリリース個別 URL を取得
+3. それでも指定件数に満たなければ、「企業名 プレスリリース」で Web 検索して最新のプレスリリース個別 URL を取得
+
+除外条件:
+
+- ヘッダー、グローバルナビ、フッター、サイドバー、関連記事、別カテゴリのニュースリンク
+- 一覧ページ、カテゴリページ、採用情報、問い合わせ、SNS、重複 URL
+
+成果物はプレスリリース本文の個別 URL のみとする。
 
 ### 7.3 要約 + 用語抽出（個別記事）
 
-- プロンプト: 「次の URL の本文を取得し、100 文字以内の要約と専門用語（読み方つき）を抽出」
-- 100 文字超過時は再生成（最大 2 回）
+- プロンプト: 「次の URL の本文を取得し、90〜110 文字程度の要約と専門用語（読み方つき）を抽出」
+- Structured Output の `summary` は `minLength: 80`, `maxLength: 120`
+- 文字数が 80 文字未満であっても、文字数を理由に再生成しない
+- OpenAI API の通信失敗時のみ `createResponse` 内で最大 3 回リトライする
+- PDF URL は OpenAI の `web_search` ツールで取得できる場合のみ対応する。アプリ側で PDF を直接ダウンロード・テキスト抽出する明示的な処理は持たない
 
 ---
 
@@ -452,7 +496,7 @@ press-note/
 ├── lib/
 │   ├── supabase.ts                   # サーバー / クライアント用ファクトリ
 │   ├── openai.ts                     # Responses API ラッパ
-│   ├── crawler.ts                    # 3 段階探索
+│   ├── crawler.ts                    # AI 主導の段階的探索
 │   ├── push.ts                       # web-push ラッパ
 │   ├── auth.ts                       # JWT 発行・検証
 │   └── schemas.ts                    # Zod スキーマ
@@ -475,16 +519,16 @@ press-note/
 
 ### 9.1 単体テスト（Vitest）
 
-- `lib/crawler.ts` の 3 段階フォールバック分岐
+- `lib/crawler.ts` の探索プロンプト
 - `lib/openai.ts` のレスポンスバリデーション（モック）
 - `lib/auth.ts` の JWT 発行 / 検証
-- Zod スキーマの境界値（100 字超過、空配列、未来日時など）
+- Zod スキーマの境界値（120 字超過、公開日時の形式ゆれ、報告理由など）
 
 ### 9.2 結合テスト
 
 - API ルートの正常系・異常系（Supabase はテスト用プロジェクト or `pg-mem` でモック）
 - 重複 URL は INSERT がスキップされる
-- 報告 → 承認で `articles.is_deleted=true` になる
+- 報告 → 承認で `articles.is_deleted=true` になり、URL が `rejected_article_urls` に保存される
 
 ### 9.3 E2E（Playwright）
 

@@ -14,7 +14,7 @@ create table if not exists articles (
   source_id uuid not null references sources(id) on delete cascade,
   url text not null unique,
   title text not null,
-  summary text not null check (char_length(summary) <= 100),
+  summary text not null check (char_length(summary) <= 120),
   published_at timestamptz,
   fetched_at timestamptz not null default now(),
   is_deleted boolean not null default false
