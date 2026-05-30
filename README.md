@@ -29,21 +29,21 @@ Supabase 環境変数が未設定の場合、公開ページと管理画面は�
 cp .env.example .env
 ```
 
-| 変数名 | 必須 | セットする値 | 用途 |
-| --- | --- | --- | --- |
-| `ADMIN_PASSWORD_HASH` | 本番必須 | 管理ログイン用パスワードを bcrypt でハッシュ化した文字列 | `/admin` のパスワード認証 |
-| `ADMIN_JWT_SECRET` | 本番必須 | 32 文字以上のランダムな秘密文字列 | 管理ログイン Cookie の JWT 署名 |
-| `OPENAI_API_KEY` | クロール必須 | OpenAI Platform の API key | プレスリリース要約と用語抽出 |
-| `OPENAI_MODEL` | 任意 | 使用する OpenAI モデル名。未設定時は `gpt-5.5` | AI 要約で使うモデルの切り替え |
-| `SUPABASE_URL` | DB 利用時必須 | Supabase Project Settings の Project URL | サーバー側 Supabase 接続 |
-| `SUPABASE_SERVICE_ROLE_KEY` | DB 利用時必須 | Supabase Project API keys の `service_role` key | サーバー側 DB 操作用。クライアントに出さない |
-| `NEXT_PUBLIC_SUPABASE_URL` | 必要時のみ | `SUPABASE_URL` と同じ Project URL | ブラウザ側 Supabase 利用が必要になった場合の公開 URL |
-| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | 必要時のみ | Supabase Project API keys の `anon` key | ブラウザ側 Supabase 利用が必要になった場合の公開 anon key |
-| `VAPID_PUBLIC_KEY` | Push 必須 | Web Push 用 VAPID public key | ブラウザの Push 購読作成 |
-| `VAPID_PRIVATE_KEY` | Push 必須 | Web Push 用 VAPID private key | サーバーから Push 通知を送信 |
-| `VAPID_SUBJECT` | Push 必須 | `mailto:you@example.com` 形式の連絡先 | Push サービスへ送る VAPID subject |
-| `CRON_SECRET` | Cron 必須 | 32 文字以上のランダムな秘密文字列 | Supabase Cron から `/api/cron/*` を呼ぶ Bearer 認証 |
-| `APP_ORIGIN` | 本番必須 | デプロイ先のオリジン。例: `https://pressnote.example.com` | 管理操作の Origin チェック |
+| 変数名                          | 必須          | セットする値                                              | 用途                                                      |
+| ------------------------------- | ------------- | --------------------------------------------------------- | --------------------------------------------------------- |
+| `ADMIN_PASSWORD_HASH`           | 本番必須      | 管理ログイン用パスワードを bcrypt でハッシュ化した文字列  | `/admin` のパスワード認証                                 |
+| `ADMIN_JWT_SECRET`              | 本番必須      | 32 文字以上のランダムな秘密文字列                         | 管理ログイン Cookie の JWT 署名                           |
+| `OPENAI_API_KEY`                | クロール必須  | OpenAI Platform の API key                                | プレスリリース要約と用語抽出                              |
+| `OPENAI_MODEL`                  | 任意          | 使用する OpenAI モデル名。未設定時は `gpt-5.5`            | AI 要約で使うモデルの切り替え                             |
+| `SUPABASE_URL`                  | DB 利用時必須 | Supabase Project Settings の Project URL                  | サーバー側 Supabase 接続                                  |
+| `SUPABASE_SERVICE_ROLE_KEY`     | DB 利用時必須 | Supabase Project API keys の `service_role` key           | サーバー側 DB 操作用。クライアントに出さない              |
+| `NEXT_PUBLIC_SUPABASE_URL`      | 必要時のみ    | `SUPABASE_URL` と同じ Project URL                         | ブラウザ側 Supabase 利用が必要になった場合の公開 URL      |
+| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | 必要時のみ    | Supabase Project API keys の `anon` key                   | ブラウザ側 Supabase 利用が必要になった場合の公開 anon key |
+| `VAPID_PUBLIC_KEY`              | Push 必須     | Web Push 用 VAPID public key                              | ブラウザの Push 購読作成                                  |
+| `VAPID_PRIVATE_KEY`             | Push 必須     | Web Push 用 VAPID private key                             | サーバーから Push 通知を送信                              |
+| `VAPID_SUBJECT`                 | Push 必須     | `mailto:you@example.com` 形式の連絡先                     | Push サービスへ送る VAPID subject                         |
+| `CRON_SECRET`                   | Cron 必須     | 32 文字以上のランダムな秘密文字列                         | Supabase Cron から `/api/cron/*` を呼ぶ Bearer 認証       |
+| `APP_ORIGIN`                    | 本番必須      | デプロイ先のオリジン。例: `https://pressnote.example.com` | 管理操作の Origin チェック                                |
 
 ローカルで Supabase 関連の値を空にしている場合、公開ページと管理画面はモックデータで表示されます。開発時のみ `ADMIN_PASSWORD_HASH` 未設定なら、管理ログインの暫定パスワードは `admin` です。
 
@@ -52,7 +52,7 @@ cp .env.example .env
 `ADMIN_JWT_SECRET` と `CRON_SECRET` は、十分に長いランダム文字列を使います。
 
 ```bash
-node -e "const { randomUUID } = require('crypto'); console.log(randomUUID() + randomUUID())"
+openssl rand -hex 32
 ```
 
 `ADMIN_PASSWORD_HASH` は bcrypt ハッシュを設定します。
