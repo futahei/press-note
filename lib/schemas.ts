@@ -103,8 +103,8 @@ export const articleQuerySchema = z.object({
 });
 
 export const termQuerySchema = z.object({
-  q: z.string().trim().max(120).optional(),
-  initial: z.string().trim().max(2).optional()
+  q: optionalQueryTextSchema,
+  initial: z.preprocess(emptyStringToUndefined, z.string().trim().max(2).optional())
 });
 
 export const pushSubscriptionSchema = z.object({

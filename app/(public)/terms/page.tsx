@@ -3,6 +3,14 @@ import { listTerms } from "@/lib/data";
 
 const initials = ["あ", "か", "さ", "た", "な", "は", "ま", "や", "ら", "わ"];
 
+function termsHref({ initial, q }: { initial?: string; q?: string }) {
+  const params = new URLSearchParams();
+  if (q) params.set("q", q);
+  if (initial) params.set("initial", initial);
+  const query = params.toString();
+  return query ? `/terms?${query}` : "/terms";
+}
+
 export default async function TermsPage({
   searchParams
 }: {
@@ -11,6 +19,7 @@ export default async function TermsPage({
   const params = await searchParams;
   const terms = await listTerms(params);
   const selectedInitial = typeof params.initial === "string" ? params.initial : "";
+  const q = typeof params.q === "string" ? params.q : "";
 
   return (
     <main className="page">
@@ -32,7 +41,7 @@ export default async function TermsPage({
                 key={initial}
                 aria-current={selectedInitial === initial ? "page" : undefined}
                 className={selectedInitial === initial ? "chip chip-selected" : "chip"}
-                href={`/terms?initial=${initial}`}
+                href={termsHref({ initial: selectedInitial === initial ? undefined : initial, q })}
               >
                 {initial}
               </Link>

@@ -4,6 +4,7 @@ import {
   articleReportSchema,
   articleSummarySchema,
   sourceInputSchema,
+  termQuerySchema,
   termInputSchema
 } from "@/lib/schemas";
 
@@ -104,5 +105,15 @@ describe("schemas", () => {
     expect(query.source).toBeUndefined();
     expect(query.from).toBeUndefined();
     expect(query.to).toBeUndefined();
+  });
+
+  it("treats empty term query fields as unspecified", () => {
+    const query = termQuerySchema.parse({
+      q: "",
+      initial: ""
+    });
+
+    expect(query.q).toBeUndefined();
+    expect(query.initial).toBeUndefined();
   });
 });
