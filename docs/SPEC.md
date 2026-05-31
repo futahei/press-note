@@ -178,7 +178,7 @@
 - `llm_usage_logs` を日次集計する `llm_usage_daily` View を提供する
 - `llm_usage_daily` は `security_invoker = true` で作成する
 - `/api/cron/usage-rollup` は Cron 疎通確認用の API として残し、View 自体は自動集計される
-- 管理画面のコストグラフは `llm_usage_daily` ではなく OpenAI Costs API を参照する。`OPENAI_ADMIN_API_KEY` を使い、`OPENAI_COST_PROJECT_ID` が設定されている場合は対象 Project に絞り込む
+- 管理画面のコストグラフは `llm_usage_daily` ではなく OpenAI Costs API を参照する。`OPENAI_ADMIN_API_KEY` を使い、`OPENAI_COST_API_KEY_ID` が設定されている場合はこのサービス専用 API key に絞り込む
 - 当月 1 日〜末日の日次コストを取得する。当日分は時間単位バケットの取得を試み、OpenAI Costs API が時間単位に未対応の場合は当日の日次バケットを利用する
 - `llm_usage_daily` はトークン数・処理種別の監査用として残す
 
@@ -247,7 +247,7 @@
 | `ADMIN_JWT_SECRET`                       | 管理者 Cookie 用 JWT 署名鍵                                                        |
 | `OPENAI_API_KEY`                         | OpenAI API キー                                                                    |
 | `OPENAI_ADMIN_API_KEY`                   | OpenAI Costs API 取得用の Admin API キー                                           |
-| `OPENAI_COST_PROJECT_ID`                 | 任意。Costs API の取得対象をこのサービスの OpenAI Project に絞り込む               |
+| `OPENAI_COST_API_KEY_ID`                 | 任意。Costs API の取得対象をこのサービス専用 API key に絞り込む                    |
 | `OPENAI_MODEL`                           | 使用モデル（既定: `gpt-5.5`）                                                      |
 | `USD_TO_JPY_RATE`                        | 管理画面の LLM コストを円換算するための概算レート（既定: `160`）                   |
 | `SUPABASE_URL`                           | Supabase プロジェクト URL                                                          |

@@ -13,6 +13,7 @@ type OpenAICostBucket = {
       value?: number;
       currency?: string;
     };
+    api_key_id?: string | null;
     line_item?: string | null;
     project_id?: string | null;
   }>;
@@ -121,7 +122,7 @@ async function fetchOpenAICostBuckets({
       limit: bucketWidth === "1h" ? "168" : "31"
     });
     params.append("group_by[]", "line_item");
-    addOptionalArrayParam(params, "project_ids", env("OPENAI_COST_PROJECT_ID"));
+    addOptionalArrayParam(params, "api_key_ids", env("OPENAI_COST_API_KEY_ID"));
     if (page) params.set("page", page);
 
     const response = await fetch(`${OPENAI_COSTS_URL}?${params.toString()}`, {

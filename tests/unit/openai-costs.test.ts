@@ -33,7 +33,7 @@ describe("listOpenAICostsForCurrentMonth", () => {
 
   it("uses hourly costs for the current day when the API returns them", async () => {
     vi.stubEnv("OPENAI_ADMIN_API_KEY", "admin-key");
-    vi.stubEnv("OPENAI_COST_PROJECT_ID", "proj_pressnote");
+    vi.stubEnv("OPENAI_COST_API_KEY_ID", "key_pressnote");
     const fetchMock = vi
       .fn()
       .mockResolvedValueOnce(
@@ -80,7 +80,7 @@ describe("listOpenAICostsForCurrentMonth", () => {
 
     expect(dailyUrl.searchParams.get("bucket_width")).toBe("1d");
     expect(hourlyUrl.searchParams.get("bucket_width")).toBe("1h");
-    expect(dailyUrl.searchParams.getAll("project_ids[]")).toEqual(["proj_pressnote"]);
+    expect(dailyUrl.searchParams.getAll("api_key_ids[]")).toEqual(["key_pressnote"]);
     expect(result.costs).toEqual([
       { usage_date: "2026-05-30", cost_usd: 1.25 },
       { usage_date: "2026-05-31", cost_usd: 5 }
