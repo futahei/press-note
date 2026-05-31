@@ -59,6 +59,7 @@ export default async function TermsPage({
             ))}
           </nav>
           <InfiniteTermList
+            key={JSON.stringify(listParams)}
             initialTerms={terms}
             initialPage={page}
             initialLimit={limit}

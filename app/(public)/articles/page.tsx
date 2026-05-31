@@ -59,6 +59,7 @@ export default async function ArticlesPage({
             </button>
           </form>
           <InfiniteArticleList
+            key={JSON.stringify(listParams)}
             initialArticles={articles}
             initialPage={page}
             initialLimit={limit}

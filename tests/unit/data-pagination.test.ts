@@ -35,6 +35,14 @@ describe("data pagination", () => {
     expect(second.hasMore).toBe(false);
   });
 
+  it("filters terms by kana row groups", async () => {
+    const taRow = await listTermsPage({ initial: "た" });
+    const haRow = await listTermsPage({ initial: "は" });
+
+    expect(taRow.terms.map((term) => term.reading)).toContain("でーたくりーんるーむ");
+    expect(haRow.terms.map((term) => term.reading)).toContain("はいそうさいてきか");
+  });
+
   it("treats an out-of-range Supabase term page as the end of the list", async () => {
     const range = vi.fn().mockResolvedValue({
       data: null,
@@ -47,6 +55,7 @@ describe("data pagination", () => {
     });
     const request = {
       ilike: vi.fn(() => request),
+      or: vi.fn(() => request),
       order: vi.fn(() => request),
       range
     };
@@ -61,6 +70,8 @@ describe("data pagination", () => {
     expect(result.terms).toEqual([]);
     expect(result.total).toBe(20);
     expect(result.hasMore).toBe(false);
-    expect(request.ilike).toHaveBeenCalledWith("reading", "あ%");
+    expect(request.or).toHaveBeenCalledWith(
+      "reading.ilike.あ%,reading.ilike.い%,reading.ilike.う%,reading.ilike.え%,reading.ilike.お%,reading.ilike.ア%,reading.ilike.イ%,reading.ilike.ウ%,reading.ilike.エ%,reading.ilike.オ%"
+    );
   });
 });

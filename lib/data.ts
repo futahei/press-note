@@ -13,6 +13,36 @@ import {
 export const ARTICLES_PER_PAGE = 18;
 export const TERMS_PER_PAGE = 24;
 
+const initialPrefixGroups: Record<string, string[]> = {
+  あ: ["あ", "い", "う", "え", "お", "ア", "イ", "ウ", "エ", "オ"],
+  か: ["か", "き", "く", "け", "こ", "が", "ぎ", "ぐ", "げ", "ご", "カ", "キ", "ク", "ケ", "コ", "ガ", "ギ", "グ", "ゲ", "ゴ"],
+  さ: ["さ", "し", "す", "せ", "そ", "ざ", "じ", "ず", "ぜ", "ぞ", "サ", "シ", "ス", "セ", "ソ", "ザ", "ジ", "ズ", "ゼ", "ゾ"],
+  た: ["た", "ち", "つ", "て", "と", "だ", "ぢ", "づ", "で", "ど", "タ", "チ", "ツ", "テ", "ト", "ダ", "ヂ", "ヅ", "デ", "ド"],
+  な: ["な", "に", "ぬ", "ね", "の", "ナ", "ニ", "ヌ", "ネ", "ノ"],
+  は: ["は", "ひ", "ふ", "へ", "ほ", "ば", "び", "ぶ", "べ", "ぼ", "ぱ", "ぴ", "ぷ", "ぺ", "ぽ", "ハ", "ヒ", "フ", "ヘ", "ホ", "バ", "ビ", "ブ", "ベ", "ボ", "パ", "ピ", "プ", "ペ", "ポ"],
+  ま: ["ま", "み", "む", "め", "も", "マ", "ミ", "ム", "メ", "モ"],
+  や: ["や", "ゆ", "よ", "ヤ", "ユ", "ヨ"],
+  ら: ["ら", "り", "る", "れ", "ろ", "ラ", "リ", "ル", "レ", "ロ"],
+  わ: ["わ", "を", "ん", "ワ", "ヲ", "ン"]
+};
+
+function initialPrefixes(initial?: string) {
+  if (!initial) return [];
+  return initialPrefixGroups[initial] ?? [initial];
+}
+
+function matchesInitial(reading: string, initial?: string) {
+  const prefixes = initialPrefixes(initial);
+  return prefixes.length === 0 || prefixes.some((prefix) => reading.startsWith(prefix));
+}
+
+function applyInitialFilter<T>(request: T, initial?: string): T {
+  const prefixes = initialPrefixes(initial);
+  if (prefixes.length === 0) return request;
+  const expression = prefixes.map((prefix) => `reading.ilike.${prefix}%`).join(",");
+  return (request as { or: (expression: string) => T }).or(expression);
+}
+
 function orderByArticleDate(articles: Article[]) {
   return [...articles].sort((a, b) => {
     const aDate = new Date(a.published_at ?? a.fetched_at).getTime();
@@ -160,7 +190,7 @@ export async function listTermsPage(searchParams: unknown = {}) {
 
   if (!supabase) {
     const rows = fixtureTerms.filter((term) => {
-      if (query.initial && !term.reading.startsWith(query.initial)) return false;
+      if (!matchesInitial(term.reading, query.initial)) return false;
       if (query.q && !(term.headword.startsWith(query.q) || term.reading.startsWith(query.q))) return false;
       return true;
     });
@@ -177,7 +207,7 @@ export async function listTermsPage(searchParams: unknown = {}) {
     .from("terms_with_article_count")
     .select("*", { count: "exact" })
     .order("reading", { ascending: true });
-  if (query.initial) request = request.ilike("reading", `${query.initial}%`);
+  request = applyInitialFilter(request, query.initial);
   if (query.q) request = request.or(`headword.ilike.${query.q}%,reading.ilike.${query.q}%`);
   let { data, count, error } = await request.range(from, to);
   if (error?.code === "PGRST103") {
@@ -191,7 +221,7 @@ export async function listTermsPage(searchParams: unknown = {}) {
   }
   if (error?.code === "PGRST205") {
     let fallback = supabase.from("terms").select("*", { count: "exact" }).order("reading", { ascending: true });
-    if (query.initial) fallback = fallback.ilike("reading", `${query.initial}%`);
+    fallback = applyInitialFilter(fallback, query.initial);
     if (query.q) fallback = fallback.or(`headword.ilike.${query.q}%,reading.ilike.${query.q}%`);
     const fallbackResult = await fallback.range(from, to);
     data = fallbackResult.data;
@@ -208,7 +238,7 @@ export async function listTermsPage(searchParams: unknown = {}) {
     }
     if (error?.code === "PGRST205") {
       const rows = fixtureTerms.filter((term) => {
-        if (query.initial && !term.reading.startsWith(query.initial)) return false;
+        if (!matchesInitial(term.reading, query.initial)) return false;
         if (query.q && !(term.headword.startsWith(query.q) || term.reading.startsWith(query.q))) return false;
         return true;
       });
