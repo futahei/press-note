@@ -1452,8 +1452,55 @@ button:focus-visible,
 .footer {
   background: transparent;
   color: var(--color-text-muted);
-  text-align: center;
-  padding: 28px 20px;
+  padding: 48px 20px 36px;
+}
+
+.footer-grid {
+  display: grid;
+  grid-template-columns: minmax(220px, 1.4fr) repeat(3, minmax(140px, 1fr));
+  gap: 28px;
+  align-items: start;
+  border-top: 1px solid var(--color-border-subtle);
+  padding-top: 28px;
+}
+
+.footer-brand {
+  display: grid;
+  gap: 12px;
+}
+
+.footer-brand p,
+.footer-note p {
+  max-width: 420px;
+  margin: 0;
+  color: var(--color-text-muted);
+  font-size: 13px;
+  line-height: 1.8;
+}
+
+.footer-nav,
+.footer-note {
+  display: grid;
+  gap: 10px;
+}
+
+.footer-nav h2,
+.footer-note h2 {
+  margin: 0 0 2px;
+  color: var(--color-text-main);
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.footer-nav a {
+  justify-self: start;
+  color: var(--color-text-muted);
+  font-size: 13px;
+  text-decoration: none;
+}
+
+.footer-nav a:hover {
+  color: var(--color-primary);
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -1491,6 +1538,10 @@ button:focus-visible,
 
   .settings-panel {
     padding: 0 24px;
+  }
+
+  .footer-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
   .settings-panel-head,
@@ -1566,5 +1617,10 @@ button:focus-visible,
 
   .bug-report-button::after {
     content: "";
+  }
+
+  .footer-grid {
+    grid-template-columns: 1fr;
+    gap: 24px;
   }
 }

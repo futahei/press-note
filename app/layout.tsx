@@ -51,8 +51,38 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
         </header>
         <div id="main-content">{children}</div>
         <footer className="footer">
-          <div className="container">
-            <p>PressNote は登録した企業のプレスリリースを収集し、要約と用語解説を保存します。</p>
+          <div className="container footer-grid">
+            <div className="footer-brand">
+              <Link className="brand-link" href="/" aria-label="PressNote ホーム">
+                <Image alt="" className="brand-icon" height={28} src="/icon.png" width={28} />
+                <span className="brand-wordmark">PressNote</span>
+              </Link>
+              <p>各社公式プレスリリースを収集し、AI要約で一覧できる個人運用のニュースノートです。</p>
+            </div>
+            <nav className="footer-nav" aria-label="サイトマップ">
+              <h2>サイトマップ</h2>
+              <Link href="/">最新</Link>
+              <Link href="/articles">記事一覧</Link>
+              <Link href="/terms">用語帳</Link>
+              <Link href="/settings">通知設定</Link>
+            </nav>
+            <nav className="footer-nav" aria-label="運用">
+              <h2>運用</h2>
+              <a href="https://github.com/futahei/press-note" rel="noreferrer" target="_blank">
+                GitHub
+              </a>
+              <a href="https://github.com/futahei/press-note/blob/main/README.md" rel="noreferrer" target="_blank">
+                README
+              </a>
+              <a href="https://github.com/futahei/press-note/blob/main/docs/SPEC.md" rel="noreferrer" target="_blank">
+                仕様書
+              </a>
+            </nav>
+            <div className="footer-note">
+              <h2>注記</h2>
+              <p>要約はAI生成です。正確な内容はリンク先の原文を確認してください。</p>
+              <p>不具合報告は画面右下のアイコンから匿名で送信できます。</p>
+            </div>
           </div>
         </footer>
         <BugReportButton />
