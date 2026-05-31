@@ -34,6 +34,8 @@ cp .env.example .env
 | `ADMIN_PASSWORD_HASH`           | 本番必須      | 管理ログイン用パスワードを bcrypt でハッシュ化した文字列  | `/admin` のパスワード認証                                 |
 | `ADMIN_JWT_SECRET`              | 本番必須      | 32 文字以上のランダムな秘密文字列                         | 管理ログイン Cookie の JWT 署名                           |
 | `OPENAI_API_KEY`                | クロール必須  | OpenAI Platform の API key                                | プレスリリース要約と用語抽出                              |
+| `OPENAI_ADMIN_API_KEY`          | コスト表示必須 | OpenAI Platform の Admin API key                          | 管理画面の LLM コストを OpenAI Costs API から取得         |
+| `OPENAI_COST_PROJECT_ID`        | 任意          | OpenAI Project ID。例: `proj_...`                         | Costs API の取得対象をこのサービスの Project に絞り込む   |
 | `OPENAI_MODEL`                  | 任意          | 使用する OpenAI モデル名。未設定時は `gpt-5.5`            | AI 要約で使うモデルの切り替え                             |
 | `USD_TO_JPY_RATE`               | 任意          | 例: `160`。未設定時は `160`                               | 管理画面の LLM コストを円換算するための概算レート         |
 | `SUPABASE_URL`                  | DB 利用時必須 | Supabase Project Settings の Project URL                  | サーバー側 Supabase 接続                                  |
