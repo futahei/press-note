@@ -48,7 +48,7 @@ type ResponsesPayload = {
 };
 
 const urlListSchema = z.object({
-  urls: z.array(z.string().url()).max(20)
+  urls: z.array(z.string().url())
 });
 
 const urlListJsonSchema = {
@@ -58,7 +58,6 @@ const urlListJsonSchema = {
   properties: {
     urls: {
       type: "array",
-      maxItems: 20,
       items: { type: "string" }
     }
   }

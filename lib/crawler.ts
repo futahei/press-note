@@ -3,8 +3,59 @@ import { searchPressReleaseUrls, summarizePressReleaseUrl } from "@/lib/openai";
 import type { ArticleSummaryOutput, PreviewArticle } from "@/lib/schemas";
 import type { Source } from "@/lib/types";
 
-export function buildPressReleaseDiscoveryPrompt(source: Pick<Source, "name" | "url">, count: number) {
+const JAPAN_TIME_ZONE = "Asia/Tokyo";
+
+type DiscoveryOptions = {
+  count?: number;
+  todayOnly?: boolean;
+  now?: Date;
+};
+
+function normalizeDiscoveryOptions(options: number | DiscoveryOptions): DiscoveryOptions {
+  return typeof options === "number" ? { count: options } : options;
+}
+
+function getJstDateKey(date: Date) {
+  const parts = new Intl.DateTimeFormat("ja-JP", {
+    timeZone: JAPAN_TIME_ZONE,
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit"
+  }).formatToParts(date);
+  const year = parts.find((part) => part.type === "year")?.value;
+  const month = parts.find((part) => part.type === "month")?.value;
+  const day = parts.find((part) => part.type === "day")?.value;
+  return `${year}-${month}-${day}`;
+}
+
+export function isPublishedOnJstDate(publishedAt: string | null, targetDate: Date) {
+  if (!publishedAt) return false;
+  const date = new Date(publishedAt);
+  if (Number.isNaN(date.getTime())) return false;
+  return getJstDateKey(date) === getJstDateKey(targetDate);
+}
+
+export function buildPressReleaseDiscoveryPrompt(
+  source: Pick<Source, "name" | "url">,
+  options: number | DiscoveryOptions
+) {
   const sourceUrl = new URL(source.url);
+  const query = normalizeDiscoveryOptions(options);
+
+  if (query.todayOnly) {
+    const today = getJstDateKey(query.now ?? new Date());
+    return [
+      `${source.name} の ${today}（日本時間）に公開されたプレスリリース本文の個別URLだけを、新しい順に取得してください。`,
+      "件数の上限・下限はありません。取得できた当日分だけを返してください。",
+      `1. ${source.url} を調べ、ページ本文の主コンテンツ領域にある記事一覧、リスト、カードから当日公開のプレスリリースを取得する`,
+      "2. 当日公開と確認できないURL、公開日が不明なURL、前日以前のURLは返さないでください。",
+      "3. 当日分が見つからない場合は、追加検索や再試行で無理に探しに行かず、空配列を返してください。",
+      "ヘッダー、グローバルナビ、フッター、サイドバー、関連記事、別カテゴリのニュースリンクにあるURLは除外してください。",
+      "成果物はプレスリリース本文の個別URLだけにしてください。一覧ページ、カテゴリページ、採用情報、問い合わせ、SNS、重複URLは除外してください。"
+    ].join("\n");
+  }
+
+  const count = query.count ?? 20;
 
   return [
     `${source.name} の最新プレスリリース個別URLを新しい順に最大 ${count} 件取得してください。`,
@@ -20,12 +71,14 @@ export function buildPressReleaseDiscoveryPrompt(source: Pick<Source, "name" | "
 
 async function discoverPressReleaseUrlsWithAi(
   source: Pick<Source, "name" | "url">,
-  count: number,
+  options: number | DiscoveryOptions,
   sourceId?: string
 ) {
-  const result = await searchPressReleaseUrls(buildPressReleaseDiscoveryPrompt(source, count), "crawl_step_a");
+  const query = normalizeDiscoveryOptions(options);
+  const result = await searchPressReleaseUrls(buildPressReleaseDiscoveryPrompt(source, query), "crawl_step_a");
   if (sourceId) await logUsage({ purpose: result.purpose, sourceId, usage: result.usage });
-  return [...new Set(result.urls)].slice(0, count);
+  const urls = [...new Set(result.urls)];
+  return query.count ? urls.slice(0, query.count) : urls;
 }
 
 async function logUsage({
@@ -54,9 +107,9 @@ async function logUsage({
 export async function discoverPressReleaseUrls(
   source: Pick<Source, "name" | "url">,
   sourceId?: string,
-  count = 20
+  options: number | DiscoveryOptions = 20
 ): Promise<string[]> {
-  return discoverPressReleaseUrlsWithAi(source, count, sourceId);
+  return discoverPressReleaseUrlsWithAi(source, options, sourceId);
 }
 
 export async function summarizeUrlsForPreview(
@@ -127,13 +180,13 @@ export async function saveSummarizedArticle({
   return article.id as string;
 }
 
-export async function crawlSource(source: Pick<Source, "id" | "name" | "url">) {
+export async function crawlSource(source: Pick<Source, "id" | "name" | "url">, now = new Date()) {
   const supabase = getServiceSupabase();
-  const links = await discoverPressReleaseUrls(source, source.id, 20);
+  const links = await discoverPressReleaseUrls(source, source.id, { todayOnly: true, now });
   const processed: string[] = [];
   const skipped: string[] = [];
 
-  for (const url of links.slice(0, 20)) {
+  for (const url of links) {
     const { data: existing, error: existingError } = await supabase
       .from("articles")
       .select("id")
@@ -158,6 +211,10 @@ export async function crawlSource(source: Pick<Source, "id" | "name" | "url">) {
 
     const summary = await summarizePressReleaseUrl(url);
     if (!summary.is_press_release) {
+      skipped.push(url);
+      continue;
+    }
+    if (!isPublishedOnJstDate(summary.published_at, now)) {
       skipped.push(url);
       continue;
     }
