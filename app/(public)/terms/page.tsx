@@ -1,5 +1,6 @@
 import Link from "next/link";
-import { listTerms } from "@/lib/data";
+import { InfiniteTermList } from "@/components/InfiniteTermList";
+import { listTermsPage } from "@/lib/data";
 
 const initials = ["あ", "か", "さ", "た", "な", "は", "ま", "や", "ら", "わ"];
 
@@ -11,13 +12,23 @@ function termsHref({ initial, q }: { initial?: string; q?: string }) {
   return query ? `/terms?${query}` : "/terms";
 }
 
+function toSingleValueParams(params: Record<string, string | string[] | undefined>) {
+  return Object.fromEntries(
+    Object.entries(params).flatMap(([key, value]) => {
+      if (key === "page" || key === "limit" || value == null) return [];
+      return [[key, Array.isArray(value) ? value[0] ?? "" : value]];
+    })
+  );
+}
+
 export default async function TermsPage({
   searchParams
 }: {
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
   const params = await searchParams;
-  const terms = await listTerms(params);
+  const listParams = toSingleValueParams(params);
+  const { terms, total, page, limit, hasMore } = await listTermsPage(listParams);
   const selectedInitial = typeof params.initial === "string" ? params.initial : "";
   const q = typeof params.q === "string" ? params.q : "";
 
@@ -47,21 +58,14 @@ export default async function TermsPage({
               </Link>
             ))}
           </nav>
-          <div className="grid">
-            {terms.map((term) => (
-              <article className="utility-card" key={term.id}>
-                <div className="small">
-                  {term.reading} ・ 関連 {term.article_count ?? 0} 件
-                </div>
-                <h3>
-                  <Link className="text-link" href={`/terms/${term.id}`}>
-                    {term.headword}
-                  </Link>
-                </h3>
-                <p>{term.description}</p>
-              </article>
-            ))}
-          </div>
+          <InfiniteTermList
+            initialTerms={terms}
+            initialPage={page}
+            initialLimit={limit}
+            initialHasMore={hasMore}
+            total={total}
+            searchParams={listParams}
+          />
         </div>
       </section>
     </main>

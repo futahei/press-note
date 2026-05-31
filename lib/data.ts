@@ -10,7 +10,8 @@ import {
   fixtureUsage
 } from "@/lib/fixtures";
 
-export const ARTICLES_PER_PAGE = 30;
+export const ARTICLES_PER_PAGE = 18;
+export const TERMS_PER_PAGE = 24;
 
 function orderByArticleDate(articles: Article[]) {
   return [...articles].sort((a, b) => {
@@ -41,8 +42,16 @@ export async function listArticles(searchParams: unknown = {}) {
     }
     if (query.source) rows = rows.filter((article) => article.source_id === query.source);
     if (query.date) rows = rows.filter((article) => (article.published_at ?? article.fetched_at).startsWith(query.date ?? ""));
-    const start = (query.page - 1) * ARTICLES_PER_PAGE;
-    return { articles: rows.slice(start, start + ARTICLES_PER_PAGE), total: rows.length, page: query.page };
+    if (query.from) rows = rows.filter((article) => (article.published_at ?? article.fetched_at) >= `${query.from}T00:00:00.000Z`);
+    if (query.to) rows = rows.filter((article) => (article.published_at ?? article.fetched_at) <= `${query.to}T23:59:59.999Z`);
+    const start = (query.page - 1) * query.limit;
+    return {
+      articles: rows.slice(start, start + query.limit),
+      total: rows.length,
+      page: query.page,
+      limit: query.limit,
+      hasMore: start + query.limit < rows.length
+    };
   }
 
   let request = supabase
@@ -62,15 +71,28 @@ export async function listArticles(searchParams: unknown = {}) {
   if (query.from) request = request.gte("published_at", `${query.from}T00:00:00.000Z`);
   if (query.to) request = request.lte("published_at", `${query.to}T23:59:59.999Z`);
 
-  const from = (query.page - 1) * ARTICLES_PER_PAGE;
-  const to = from + ARTICLES_PER_PAGE - 1;
+  const from = (query.page - 1) * query.limit;
+  const to = from + query.limit - 1;
   const { data, count, error } = await request.range(from, to);
   if (error?.code === "PGRST205") {
-    return { articles: orderByArticleDate(fixtureArticles), total: fixtureArticles.length, page: query.page };
+    const fallback = orderByArticleDate(fixtureArticles);
+    return {
+      articles: fallback.slice(from, from + query.limit),
+      total: fallback.length,
+      page: query.page,
+      limit: query.limit,
+      hasMore: from + query.limit < fallback.length
+    };
   }
   if (error) throw error;
 
-  return { articles: (data ?? []) as Article[], total: count ?? 0, page: query.page };
+  return {
+    articles: (data ?? []) as Article[],
+    total: count ?? 0,
+    page: query.page,
+    limit: query.limit,
+    hasMore: from + query.limit < (count ?? 0)
+  };
 }
 
 export async function listRecentArticles(): Promise<Article[]> {
@@ -116,33 +138,69 @@ export async function getArticle(id: string): Promise<(Article & { terms: Term[]
   return { ...(data as Article), terms };
 }
 
-export async function listTerms(searchParams: unknown = {}): Promise<Term[]> {
+export async function listTermsPage(searchParams: unknown = {}) {
   const query = termQuerySchema.parse(searchParams);
   const supabase = getOptionalServiceSupabase();
+  const from = (query.page - 1) * query.limit;
+  const to = from + query.limit - 1;
 
   if (!supabase) {
-    return fixtureTerms.filter((term) => {
+    const rows = fixtureTerms.filter((term) => {
       if (query.initial && !term.reading.startsWith(query.initial)) return false;
       if (query.q && !(term.headword.startsWith(query.q) || term.reading.startsWith(query.q))) return false;
       return true;
     });
+    return {
+      terms: rows.slice(from, from + query.limit),
+      total: rows.length,
+      page: query.page,
+      limit: query.limit,
+      hasMore: from + query.limit < rows.length
+    };
   }
 
-  let request = supabase.from("terms_with_article_count").select("*").order("reading", { ascending: true });
+  let request = supabase
+    .from("terms_with_article_count")
+    .select("*", { count: "exact" })
+    .order("reading", { ascending: true });
   if (query.initial) request = request.ilike("reading", `${query.initial}%`);
   if (query.q) request = request.or(`headword.ilike.${query.q}%,reading.ilike.${query.q}%`);
-  let { data, error } = await request.limit(500);
+  let { data, count, error } = await request.range(from, to);
   if (error?.code === "PGRST205") {
-    let fallback = supabase.from("terms").select("*").order("reading", { ascending: true });
+    let fallback = supabase.from("terms").select("*", { count: "exact" }).order("reading", { ascending: true });
     if (query.initial) fallback = fallback.ilike("reading", `${query.initial}%`);
     if (query.q) fallback = fallback.or(`headword.ilike.${query.q}%,reading.ilike.${query.q}%`);
-    const fallbackResult = await fallback.limit(500);
+    const fallbackResult = await fallback.range(from, to);
     data = fallbackResult.data;
+    count = fallbackResult.count;
     error = fallbackResult.error;
-    if (error?.code === "PGRST205") return fixtureTerms;
+    if (error?.code === "PGRST205") {
+      const rows = fixtureTerms.filter((term) => {
+        if (query.initial && !term.reading.startsWith(query.initial)) return false;
+        if (query.q && !(term.headword.startsWith(query.q) || term.reading.startsWith(query.q))) return false;
+        return true;
+      });
+      return {
+        terms: rows.slice(from, from + query.limit),
+        total: rows.length,
+        page: query.page,
+        limit: query.limit,
+        hasMore: from + query.limit < rows.length
+      };
+    }
   }
   if (error) throw error;
-  return (data ?? []) as Term[];
+  return {
+    terms: (data ?? []) as Term[],
+    total: count ?? 0,
+    page: query.page,
+    limit: query.limit,
+    hasMore: from + query.limit < (count ?? 0)
+  };
+}
+
+export async function listTerms(searchParams: unknown = {}): Promise<Term[]> {
+  return (await listTermsPage({ ...(typeof searchParams === "object" && searchParams ? searchParams : {}), limit: 500 })).terms;
 }
 
 export async function getTerm(id: string): Promise<(Term & { articles: Article[] }) | null> {

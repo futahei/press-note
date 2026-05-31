@@ -120,22 +120,28 @@ describe("schemas", () => {
       q: "",
       source: "",
       from: "",
-      to: ""
+      to: "",
+      limit: "12"
     });
 
     expect(query.q).toBeUndefined();
     expect(query.source).toBeUndefined();
     expect(query.from).toBeUndefined();
     expect(query.to).toBeUndefined();
+    expect(query.limit).toBe(12);
   });
 
   it("treats empty term query fields as unspecified", () => {
     const query = termQuerySchema.parse({
       q: "",
-      initial: ""
+      initial: "",
+      page: "2",
+      limit: "24"
     });
 
     expect(query.q).toBeUndefined();
     expect(query.initial).toBeUndefined();
+    expect(query.page).toBe(2);
+    expect(query.limit).toBe(24);
   });
 });

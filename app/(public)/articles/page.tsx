@@ -1,6 +1,14 @@
-import Link from "next/link";
-import { ArticleCard } from "@/components/ArticleCard";
 import { listArticles, listSources } from "@/lib/data";
+import { InfiniteArticleList } from "@/components/InfiniteArticleList";
+
+function toSingleValueParams(params: Record<string, string | string[] | undefined>) {
+  return Object.fromEntries(
+    Object.entries(params).flatMap(([key, value]) => {
+      if (key === "page" || key === "limit" || value == null) return [];
+      return [[key, Array.isArray(value) ? value[0] ?? "" : value]];
+    })
+  );
+}
 
 export default async function ArticlesPage({
   searchParams
@@ -8,9 +16,11 @@ export default async function ArticlesPage({
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
   const params = await searchParams;
-  const [{ articles, total, page }, sources] = await Promise.all([listArticles(params), listSources()]);
-  const nextPage = page + 1;
-  const previousPage = Math.max(1, page - 1);
+  const listParams = toSingleValueParams(params);
+  const [{ articles, total, page, limit, hasMore }, sources] = await Promise.all([
+    listArticles(listParams),
+    listSources()
+  ]);
 
   return (
     <main className="page">
@@ -48,24 +58,14 @@ export default async function ArticlesPage({
               絞り込む
             </button>
           </form>
-          <p className="small">{total} 件</p>
-          <div className="grid">
-            {articles.map((article) => (
-              <ArticleCard key={article.id} article={article} />
-            ))}
-          </div>
-          <div className="button-row">
-            {page > 1 ? (
-              <Link className="button-secondary" href={`/articles?page=${previousPage}`}>
-                前へ
-              </Link>
-            ) : null}
-            {page * 30 < total ? (
-              <Link className="button-primary" href={`/articles?page=${nextPage}`}>
-                次へ
-              </Link>
-            ) : null}
-          </div>
+          <InfiniteArticleList
+            initialArticles={articles}
+            initialPage={page}
+            initialLimit={limit}
+            initialHasMore={hasMore}
+            total={total}
+            searchParams={listParams}
+          />
         </div>
       </section>
     </main>

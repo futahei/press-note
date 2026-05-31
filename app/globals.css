@@ -601,6 +601,16 @@ button {
   gap: 14px;
 }
 
+.infinite-list {
+  display: grid;
+  gap: 18px;
+}
+
+.infinite-sentinel {
+  width: 100%;
+  height: 1px;
+}
+
 .preview-item {
   display: grid;
   gap: 8px;

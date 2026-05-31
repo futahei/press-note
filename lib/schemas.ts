@@ -114,6 +114,7 @@ const optionalQueryDateSchema = z.preprocess(emptyStringToUndefined, z.string().
 
 export const articleQuerySchema = z.object({
   page: z.coerce.number().int().min(1).default(1),
+  limit: z.coerce.number().int().min(1).max(50).default(18),
   q: optionalQueryTextSchema,
   source: optionalQueryUuidSchema,
   date: optionalQueryDateSchema,
@@ -122,6 +123,8 @@ export const articleQuerySchema = z.object({
 });
 
 export const termQuerySchema = z.object({
+  page: z.coerce.number().int().min(1).default(1),
+  limit: z.coerce.number().int().min(1).max(500).default(24),
   q: optionalQueryTextSchema,
   initial: z.preprocess(emptyStringToUndefined, z.string().trim().max(2).optional())
 });

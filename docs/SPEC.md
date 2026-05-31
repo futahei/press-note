@@ -43,11 +43,12 @@
 
 #### 2.1.2 過去記事一覧 `/articles`
 
-- 全期間の記事をページネーション表示（1 ページ 30 件）
+- 全期間の記事を無限スクロールで表示する。初期表示は画面高さを埋める程度の件数から開始し、末尾までスクロールされたら次のバッチを追加取得する
 - 絞り込み: 企業（ソース）、日付範囲
 - 絞り込みフォームの空文字（未入力の日付、未選択の企業、空検索語）は未指定として扱う
 - 検索: タイトル・要約のあいまい検索
 - カード仕様はトップと同一
+- 追加読み込み中はローディングアイコンを表示し、失敗時は再試行ボタンを表示する
 
 #### 2.1.3 記事詳細 `/articles/[id]`
 
@@ -61,6 +62,8 @@
 - 頭文字（あ・か・さ…）でジャンプ可能なインデックス
 - 選択中の頭文字を再クリックすると `initial` を解除する
 - 検索: 見出し語・読み方の前方一致
+- 用語一覧も無限スクロールで表示する。初期表示は画面高さを埋める程度の件数から開始し、末尾までスクロールされたら次のバッチを追加取得する
+- 追加読み込み中はローディングアイコンを表示し、失敗時は再試行ボタンを表示する
 
 #### 2.1.5 用語詳細 `/terms/[id]`
 
@@ -388,9 +391,9 @@ with (security_invoker = true) as ...;
 
 | メソッド | パス                       | 概要                                              |
 | -------- | -------------------------- | ------------------------------------------------- |
-| GET      | `/api/articles`            | 記事一覧（`?date=YYYY-MM-DD&source=ID&q=&page=`） |
+| GET      | `/api/articles`            | 記事一覧（`?date=YYYY-MM-DD&source=ID&q=&page=&limit=`）。`{ articles, total, page, limit, hasMore }` を返す |
 | GET      | `/api/articles/:id`        | 記事詳細 + 関連用語                               |
-| GET      | `/api/terms`               | 用語一覧（`?initial=あ&q=`）                      |
+| GET      | `/api/terms`               | 用語一覧（`?initial=あ&q=&page=&limit=`）。`{ terms, total, page, limit, hasMore }` を返す |
 | GET      | `/api/terms/:id`           | 用語詳細 + 関連記事                               |
 | POST     | `/api/articles/:id/report` | 記事報告。body: `{ reason: "not_press_release" \| "duplicate" }` |
 | POST     | `/api/bug-reports`         | 匿名不具合報告。body: `{ message, path, user_agent, viewport, language, timezone, logs[] }` |
