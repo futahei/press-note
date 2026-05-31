@@ -116,18 +116,23 @@ export function SettingsClient() {
         </p>
       </div>
       <div className="button-row">
-        <button className="button-primary" type="button" onClick={subscribe} disabled={subscribed || busy}>
-          {busyAction === "subscribe" ? <span className="loading-spinner" aria-hidden="true" /> : null}
-          ON にする
-        </button>
-        <button className="button-secondary" type="button" onClick={unsubscribe} disabled={!subscribed || busy}>
-          {busyAction === "unsubscribe" ? <span className="loading-spinner" aria-hidden="true" /> : null}
-          OFF にする
-        </button>
-        <button className="button-rect" type="button" onClick={sendTest} disabled={!subscribed || busy}>
-          {busyAction === "test" ? <span className="loading-spinner" aria-hidden="true" /> : null}
-          テスト通知を送る
-        </button>
+        {subscribed ? (
+          <>
+            <button className="button-secondary" type="button" onClick={unsubscribe} disabled={busy}>
+              {busyAction === "unsubscribe" ? <span className="loading-spinner" aria-hidden="true" /> : null}
+              OFF にする
+            </button>
+            <button className="button-rect" type="button" onClick={sendTest} disabled={busy}>
+              {busyAction === "test" ? <span className="loading-spinner" aria-hidden="true" /> : null}
+              テスト通知を送る
+            </button>
+          </>
+        ) : (
+          <button className="button-primary" type="button" onClick={subscribe} disabled={busy}>
+            {busyAction === "subscribe" ? <span className="loading-spinner" aria-hidden="true" /> : null}
+            ON にする
+          </button>
+        )}
       </div>
     </div>
   );
