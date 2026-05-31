@@ -94,8 +94,9 @@ export function BugReportButton() {
       return;
     }
 
-    setStatus("sent");
     setMessage("");
+    setStatus("idle");
+    setOpen(false);
   }
 
   function close() {

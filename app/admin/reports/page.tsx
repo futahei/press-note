@@ -12,14 +12,14 @@ export default async function AdminReportsPage() {
   return (
     <div style={{ display: "grid", gap: 28 }}>
       <div>
-        <h1 className="section-title">報告管理</h1>
+        <h1 className="section-title">記事報告管理</h1>
         <p className="muted">ユーザーからの記事報告に対応します。</p>
       </div>
       <div className="grid">
         {reports.map((report) => (
           <article key={report.id} className="utility-card">
             <div className="small">{new Date(report.created_at).toLocaleString("ja-JP")}</div>
-            <div className="chip report-reason-chip" aria-label="報告理由">
+            <div className="chip report-reason-chip" aria-label="記事報告理由">
               {reasonLabels[report.reason]}
             </div>
             <h3>{report.article?.title ?? "削除済み記事"}</h3>
@@ -37,14 +37,14 @@ export default async function AdminReportsPage() {
               </form>
               <form action={`/api/admin/reports/${report.id}/reject`} method="post">
                 <SubmitButton className="button-secondary" pendingLabel="却下中">
-                  報告を却下
+                  記事報告を却下
                 </SubmitButton>
               </form>
             </div>
           </article>
         ))}
       </div>
-      {reports.length === 0 ? <p className="muted">未対応の報告はありません。</p> : null}
+      {reports.length === 0 ? <p className="muted">未対応の記事報告はありません。</p> : null}
     </div>
   );
 }

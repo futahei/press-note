@@ -1,4 +1,4 @@
-import { SubmitButton } from "@/components/SubmitButton";
+import { BugReportResolveButton } from "@/components/admin/BugReportResolveButton";
 import { listOpenBugReports } from "@/lib/data";
 
 export default async function AdminBugReportsPage() {
@@ -56,11 +56,7 @@ export default async function AdminBugReportsPage() {
                 <p className="muted">ログはありません。</p>
               )}
             </details>
-            <form action={`/api/admin/bug-reports/${report.id}/resolve`} method="post">
-              <SubmitButton className="button-rect" pendingLabel="更新中">
-                対応済みにする
-              </SubmitButton>
-            </form>
+            <BugReportResolveButton reportId={report.id} />
           </article>
         ))}
       </div>

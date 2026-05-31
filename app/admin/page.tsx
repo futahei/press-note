@@ -27,7 +27,7 @@ export default async function AdminPage() {
           <strong>{summary.todayArticleCount}</strong>
         </div>
         <div className="stat">
-          <span className="small">未対応報告</span>
+          <span className="small">未対応記事報告</span>
           <strong>{summary.openReportCount}</strong>
         </div>
         <div className="stat">
@@ -97,7 +97,7 @@ export default async function AdminPage() {
           用語管理
         </Link>
         <Link className="button-secondary" href="/admin/reports">
-          報告管理
+          記事報告管理
         </Link>
         <Link className="button-secondary" href="/admin/bug-reports">
           不具合報告

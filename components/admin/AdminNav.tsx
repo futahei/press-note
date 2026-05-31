@@ -4,7 +4,7 @@ const items = [
   { href: "/admin", label: "概要" },
   { href: "/admin/sources", label: "ソース" },
   { href: "/admin/words", label: "用語" },
-  { href: "/admin/reports", label: "報告" },
+  { href: "/admin/reports", label: "記事報告" },
   { href: "/admin/bug-reports", label: "不具合" }
 ];
 
