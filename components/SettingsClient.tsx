@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { BellIcon, ExternalLinkIcon } from "@/components/Icons";
 
 function urlBase64ToUint8Array(value: string) {
   const padding = "=".repeat((4 - (value.length % 4)) % 4);
@@ -107,26 +108,30 @@ export function SettingsClient() {
   }
 
   return (
-    <div className="utility-card">
-      <div>
-        <h3>ブラウザ通知</h3>
-        <p className="muted" role="status" aria-live="polite">
-          状態: {busy ? <span className="loading-spinner" aria-hidden="true" /> : null}
-          {status}
-        </p>
+    <div className="settings-panel">
+      <div className="settings-panel-head">
+        <span className="settings-icon" aria-hidden="true">
+          <BellIcon size={34} />
+        </span>
+        <div>
+          <h3>ブラウザ通知</h3>
+          <p className="muted" role="status" aria-live="polite">
+            状態: {busy ? <span className="loading-spinner" aria-hidden="true" /> : null}
+            {status}
+          </p>
+          <p>毎朝 8 時に新着プレスリリースをブラウザ通知でお届けします。</p>
+        </div>
       </div>
-      <div className="button-row">
+      <div className="settings-row">
+        <div>
+          <strong>通知を受け取る</strong>
+          <p className="muted">ブラウザ通知の受信をオン / オフできます。</p>
+        </div>
         {subscribed ? (
-          <>
-            <button className="button-secondary" type="button" onClick={unsubscribe} disabled={busy}>
-              {busyAction === "unsubscribe" ? <span className="loading-spinner" aria-hidden="true" /> : null}
-              OFF にする
-            </button>
-            <button className="button-rect" type="button" onClick={sendTest} disabled={busy}>
-              {busyAction === "test" ? <span className="loading-spinner" aria-hidden="true" /> : null}
-              テスト通知を送る
-            </button>
-          </>
+          <button className="button-secondary" type="button" onClick={unsubscribe} disabled={busy}>
+            {busyAction === "unsubscribe" ? <span className="loading-spinner" aria-hidden="true" /> : null}
+            OFF にする
+          </button>
         ) : (
           <button className="button-primary" type="button" onClick={subscribe} disabled={busy}>
             {busyAction === "subscribe" ? <span className="loading-spinner" aria-hidden="true" /> : null}
@@ -134,6 +139,19 @@ export function SettingsClient() {
           </button>
         )}
       </div>
+      {subscribed ? (
+        <div className="settings-row">
+          <div>
+            <strong>テスト通知を送る</strong>
+            <p className="muted">現在の設定で通知が届くかテストします。</p>
+          </div>
+          <button className="button-secondary" type="button" onClick={sendTest} disabled={busy}>
+            <ExternalLinkIcon size={17} />
+            {busyAction === "test" ? <span className="loading-spinner" aria-hidden="true" /> : null}
+            テスト通知を送る
+          </button>
+        </div>
+      ) : null}
     </div>
   );
 }

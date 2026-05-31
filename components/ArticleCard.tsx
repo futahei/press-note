@@ -25,9 +25,8 @@ export function ArticleCard({ article }: { article: Article }) {
       </h3>
       <p>{article.summary}</p>
       <div className="article-actions">
-        <a className="button-secondary" href={article.url} target="_blank" rel="noopener">
+        <a className="icon-button" href={article.url} target="_blank" rel="noopener" aria-label="本家リンクを開く">
           <ExternalLinkIcon size={17} />
-          <span>本家リンク</span>
         </a>
       </div>
       <ReportButton articleId={article.id} />
