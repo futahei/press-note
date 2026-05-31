@@ -84,13 +84,22 @@ export const sourceCreateJsonSchema = sourceInputSchema.extend({
   previewArticles: z.array(previewArticleSchema).max(20).default([])
 });
 
+function emptyStringToUndefined(value: unknown) {
+  if (typeof value === "string" && value.trim() === "") return undefined;
+  return value;
+}
+
+const optionalQueryTextSchema = z.preprocess(emptyStringToUndefined, z.string().trim().max(120).optional());
+const optionalQueryUuidSchema = z.preprocess(emptyStringToUndefined, z.string().uuid().optional());
+const optionalQueryDateSchema = z.preprocess(emptyStringToUndefined, z.string().date().optional());
+
 export const articleQuerySchema = z.object({
   page: z.coerce.number().int().min(1).default(1),
-  q: z.string().trim().max(120).optional(),
-  source: z.string().uuid().optional(),
-  date: z.string().date().optional(),
-  from: z.string().date().optional(),
-  to: z.string().date().optional()
+  q: optionalQueryTextSchema,
+  source: optionalQueryUuidSchema,
+  date: optionalQueryDateSchema,
+  from: optionalQueryDateSchema,
+  to: optionalQueryDateSchema
 });
 
 export const termQuerySchema = z.object({

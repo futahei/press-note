@@ -1,5 +1,11 @@
 import { describe, expect, it } from "vitest";
-import { articleReportSchema, articleSummarySchema, sourceInputSchema, termInputSchema } from "@/lib/schemas";
+import {
+  articleQuerySchema,
+  articleReportSchema,
+  articleSummarySchema,
+  sourceInputSchema,
+  termInputSchema
+} from "@/lib/schemas";
 
 describe("schemas", () => {
   it("accepts a valid source input", () => {
@@ -84,5 +90,19 @@ describe("schemas", () => {
     expect(articleReportSchema.parse({ reason: "duplicate" }).reason).toBe("duplicate");
     expect(articleReportSchema.parse({}).reason).toBe("not_press_release");
     expect(() => articleReportSchema.parse({ reason: "other" })).toThrow();
+  });
+
+  it("treats empty article query fields as unspecified", () => {
+    const query = articleQuerySchema.parse({
+      q: "",
+      source: "",
+      from: "",
+      to: ""
+    });
+
+    expect(query.q).toBeUndefined();
+    expect(query.source).toBeUndefined();
+    expect(query.from).toBeUndefined();
+    expect(query.to).toBeUndefined();
   });
 });
