@@ -7,7 +7,7 @@ const JAPAN_TIME_ZONE = "Asia/Tokyo";
 
 type DiscoveryOptions = {
   count?: number;
-  todayOnly?: boolean;
+  recentDays?: number;
   now?: Date;
 };
 
@@ -28,11 +28,19 @@ function getJstDateKey(date: Date) {
   return `${year}-${month}-${day}`;
 }
 
-export function isPublishedOnJstDate(publishedAt: string | null, targetDate: Date) {
+function getJstDateWindow(targetDate: Date, days: number) {
+  const targetDateKey = getJstDateKey(targetDate);
+  const targetMidnight = new Date(`${targetDateKey}T00:00:00+09:00`).getTime();
+  return Array.from({ length: days }, (_, index) =>
+    getJstDateKey(new Date(targetMidnight - index * 24 * 60 * 60 * 1000))
+  );
+}
+
+export function isPublishedInJstDateWindow(publishedAt: string | null, targetDate: Date, days: number) {
   if (!publishedAt) return false;
   const date = new Date(publishedAt);
   if (Number.isNaN(date.getTime())) return false;
-  return getJstDateKey(date) === getJstDateKey(targetDate);
+  return getJstDateWindow(targetDate, days).includes(getJstDateKey(date));
 }
 
 export function buildPressReleaseDiscoveryPrompt(
@@ -42,14 +50,15 @@ export function buildPressReleaseDiscoveryPrompt(
   const sourceUrl = new URL(source.url);
   const query = normalizeDiscoveryOptions(options);
 
-  if (query.todayOnly) {
-    const today = getJstDateKey(query.now ?? new Date());
+  if (query.recentDays) {
+    const dateWindow = getJstDateWindow(query.now ?? new Date(), query.recentDays);
+    const dateWindowText = dateWindow.join(" / ");
     return [
-      `${source.name} の ${today}（日本時間）に公開されたプレスリリース本文の個別URLだけを、新しい順に取得してください。`,
-      "件数の上限・下限はありません。取得できた当日分だけを返してください。",
-      `1. ${source.url} を調べ、ページ本文の主コンテンツ領域にある記事一覧、リスト、カードから当日公開のプレスリリースを取得する`,
-      "2. 当日公開と確認できないURL、公開日が不明なURL、前日以前のURLは返さないでください。",
-      "3. 当日分が見つからない場合は、追加検索や再試行で無理に探しに行かず、空配列を返してください。",
+      `${source.name} の ${dateWindowText}（日本時間）に公開されたプレスリリース本文の個別URLだけを、新しい順に取得してください。`,
+      "件数の上限・下限はありません。取得できた対象日分だけを返してください。",
+      `1. ${source.url} を調べ、ページ本文の主コンテンツ領域にある記事一覧、リスト、カードから対象日に公開されたプレスリリースを取得する`,
+      "2. 対象日公開と確認できないURL、公開日が不明なURL、対象日より前のURLは返さないでください。",
+      "3. 対象日分が見つからない場合は、追加検索や再試行で無理に探しに行かず、空配列を返してください。",
       "ヘッダー、グローバルナビ、フッター、サイドバー、関連記事、別カテゴリのニュースリンクにあるURLは除外してください。",
       "成果物はプレスリリース本文の個別URLだけにしてください。一覧ページ、カテゴリページ、採用情報、問い合わせ、SNS、重複URLは除外してください。"
     ].join("\n");
@@ -182,7 +191,8 @@ export async function saveSummarizedArticle({
 
 export async function crawlSource(source: Pick<Source, "id" | "name" | "url">, now = new Date()) {
   const supabase = getServiceSupabase();
-  const links = await discoverPressReleaseUrls(source, source.id, { todayOnly: true, now });
+  const crawlDateWindowDays = 2;
+  const links = await discoverPressReleaseUrls(source, source.id, { recentDays: crawlDateWindowDays, now });
   const processed: string[] = [];
   const skipped: string[] = [];
 
@@ -214,7 +224,7 @@ export async function crawlSource(source: Pick<Source, "id" | "name" | "url">, n
       skipped.push(url);
       continue;
     }
-    if (!isPublishedOnJstDate(summary.published_at, now)) {
+    if (!isPublishedInJstDateWindow(summary.published_at, now, crawlDateWindowDays)) {
       skipped.push(url);
       continue;
     }

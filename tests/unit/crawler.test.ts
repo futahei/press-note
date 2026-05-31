@@ -15,7 +15,7 @@ vi.mock("@/lib/openai", () => ({
   summarizePressReleaseUrl: summarizePressReleaseUrlMock
 }));
 
-import { buildPressReleaseDiscoveryPrompt, crawlSource, isPublishedOnJstDate } from "@/lib/crawler";
+import { buildPressReleaseDiscoveryPrompt, crawlSource, isPublishedInJstDateWindow } from "@/lib/crawler";
 
 function createCrawlerSupabaseMock() {
   let articleIndex = 0;
@@ -75,13 +75,14 @@ describe("buildPressReleaseDiscoveryPrompt", () => {
     expect(prompt).toContain("3. それでも指定した数のプレスリリースを取得できなければ");
   });
 
-  it("builds a no-minimum prompt for today's cron crawl", () => {
+  it("builds a no-minimum prompt for the cron crawl date window", () => {
     const prompt = buildPressReleaseDiscoveryPrompt(
       { name: "テスト株式会社", url: "https://example.com/news" },
-      { todayOnly: true, now: new Date("2026-05-31T12:00:00+09:00") }
+      { recentDays: 2, now: new Date("2026-05-31T12:00:00+09:00") }
     );
 
     expect(prompt).toContain("2026-05-31");
+    expect(prompt).toContain("2026-05-30");
     expect(prompt).toContain("件数の上限・下限はありません");
     expect(prompt).toContain("追加検索や再試行で無理に探しに行かず、空配列");
     expect(prompt).not.toContain("指定した数のプレスリリースを取得できなければ");
@@ -93,9 +94,10 @@ describe("crawlSource", () => {
     vi.clearAllMocks();
   });
 
-  it("saves only press releases published today in JST and does not cap the result count", async () => {
+  it("saves only press releases published today or yesterday in JST and does not cap the result count", async () => {
     const urls = [
       "https://example.com/old",
+      "https://example.com/yesterday",
       ...Array.from({ length: 21 }, (_, index) => `https://example.com/today-${index + 1}`)
     ];
     const { supabase, articleUpsert } = createCrawlerSupabaseMock();
@@ -109,7 +111,11 @@ describe("crawlSource", () => {
       title: "プレスリリース",
       summary:
         "これはテスト用のプレスリリース要約です。本文の重要な内容を日本語で自然にまとめ、読者が概要を把握できるようにしています。",
-      published_at: url.endsWith("/old") ? "2026-05-30T23:59:00+09:00" : "2026-05-31T00:01:00+09:00",
+      published_at: url.endsWith("/old")
+        ? "2026-05-29T23:59:00+09:00"
+        : url.endsWith("/yesterday")
+          ? "2026-05-30T23:59:00+09:00"
+          : "2026-05-31T00:01:00+09:00",
       is_press_release: true,
       terms: [],
       usage: { input_tokens: 10, output_tokens: 5, cost_usd: 0 }
@@ -121,20 +127,22 @@ describe("crawlSource", () => {
     );
 
     expect(searchPressReleaseUrlsMock.mock.calls[0][0]).toContain("2026-05-31");
-    expect(result.discovered).toBe(22);
-    expect(result.processed).toHaveLength(21);
+    expect(searchPressReleaseUrlsMock.mock.calls[0][0]).toContain("2026-05-30");
+    expect(result.discovered).toBe(23);
+    expect(result.processed).toHaveLength(22);
     expect(result.skipped).toEqual(["https://example.com/old"]);
-    expect(summarizePressReleaseUrlMock).toHaveBeenCalledTimes(22);
-    expect(articleUpsert).toHaveBeenCalledTimes(21);
+    expect(summarizePressReleaseUrlMock).toHaveBeenCalledTimes(23);
+    expect(articleUpsert).toHaveBeenCalledTimes(22);
   });
 });
 
-describe("isPublishedOnJstDate", () => {
-  it("compares published_at by Japan time", () => {
+describe("isPublishedInJstDateWindow", () => {
+  it("compares published_at by Japan time within the date window", () => {
     const target = new Date("2026-05-31T12:00:00+09:00");
 
-    expect(isPublishedOnJstDate("2026-05-30T15:00:00.000Z", target)).toBe(true);
-    expect(isPublishedOnJstDate("2026-05-30T14:59:59.000Z", target)).toBe(false);
-    expect(isPublishedOnJstDate(null, target)).toBe(false);
+    expect(isPublishedInJstDateWindow("2026-05-30T15:00:00.000Z", target, 2)).toBe(true);
+    expect(isPublishedInJstDateWindow("2026-05-29T15:00:00.000Z", target, 2)).toBe(true);
+    expect(isPublishedInJstDateWindow("2026-05-29T14:59:59.000Z", target, 2)).toBe(false);
+    expect(isPublishedInJstDateWindow(null, target, 2)).toBe(false);
   });
 });
