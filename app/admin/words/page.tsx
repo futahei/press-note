@@ -1,9 +1,9 @@
-import { listTerms } from "@/lib/data";
+import { listTermsPage } from "@/lib/data";
 import { WordsManager } from "@/components/admin/WordsManager";
 import { SubmitButton } from "@/components/SubmitButton";
 
 export default async function AdminWordsPage() {
-  const terms = await listTerms();
+  const { terms, total, page, limit, hasMore } = await listTermsPage({ limit: 24 });
 
   return (
     <div style={{ display: "grid", gap: 28 }}>
@@ -30,7 +30,13 @@ export default async function AdminWordsPage() {
           </SubmitButton>
         </div>
       </form>
-      <WordsManager terms={terms} />
+      <WordsManager
+        initialTerms={terms}
+        initialPage={page}
+        initialLimit={limit}
+        initialHasMore={hasMore}
+        total={total}
+      />
     </div>
   );
 }

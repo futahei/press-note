@@ -96,8 +96,8 @@
 #### 2.2.2 管理ダッシュボード `/admin`
 
 - 監視中ソース数、今日の記事数、未対応の記事報告数、未対応の不具合報告数、用語数のサマリー
-- **LLM コストグラフ**: 直近 30 日分の日次 OpenAI 使用料（USD）を棒グラフで表示。月次合計とモデル別内訳をサマリー表示
-- 各管理ページへのナビゲーション
+- **LLM コストグラフ**: 当月 1 日〜末日の日次 OpenAI 使用料を `USD_TO_JPY_RATE` で円換算し、横軸を日付、縦軸をコスト（円）とする棒グラフで表示。月次合計とモデル別内訳も円でサマリー表示
+- 管理ページ間の移動はサイドバーで行い、概要ページ下部には重複する遷移ボタンを置かない
 
 #### 2.2.3 ソース管理 `/admin/sources`
 
@@ -112,6 +112,7 @@
 #### 2.2.4 用語管理 `/admin/words`
 
 - 一覧: 見出し語・読み方・登録元（AI 自動 / 管理者手動）・関連記事数
+- 一覧は初期表示で一定件数のみ読み込み、下端到達時に次ページを追加取得する無限スクロール
 - 新規追加・編集（見出し語・読み方・解説）
 - 削除（論理削除なしの物理削除、関連は CASCADE）
 - AI が抽出した用語は **`status=published`** で即公開（管理者は事後に編集・削除）
@@ -180,7 +181,7 @@
 - `llm_usage_logs` を日次集計する `llm_usage_daily` View を提供する
 - `llm_usage_daily` は `security_invoker = true` で作成する
 - `/api/cron/usage-rollup` は Cron 疎通確認用の API として残し、View 自体は自動集計される
-- グラフは Recharts 等で日次コスト（USD）を棒グラフ表示、月次合計を併記
+- グラフは当月 1 日〜末日の日次コスト（円）を棒グラフ表示、月次合計を併記
 
 ### 2.4 通知購読フロー
 
@@ -247,6 +248,7 @@
 | `ADMIN_JWT_SECRET`                       | 管理者 Cookie 用 JWT 署名鍵                                                        |
 | `OPENAI_API_KEY`                         | OpenAI API キー                                                                    |
 | `OPENAI_MODEL`                           | 使用モデル（既定: `gpt-5.5`）                                                      |
+| `USD_TO_JPY_RATE`                        | 管理画面の LLM コストを円換算するための概算レート（既定: `160`）                   |
 | `SUPABASE_URL`                           | Supabase プロジェクト URL                                                          |
 | `SUPABASE_SERVICE_ROLE_KEY`              | サーバー専用キー（クライアント露出禁止）                                           |
 | `NEXT_PUBLIC_SUPABASE_URL`               | 必要時のみ。現状はブラウザから Supabase を直接利用しないため本番必須ではない       |
@@ -410,7 +412,7 @@ with (security_invoker = true) as ...;
 | GET / POST     | `/api/admin/sources`            | ソース一覧 / 登録              |
 | PATCH / DELETE | `/api/admin/sources/:id`        | ソース更新 / 削除              |
 | POST           | `/api/admin/sources/preview`    | 登録前の初回取り込みプレビュー |
-| GET / POST     | `/api/admin/words`              | 用語一覧 / 追加                |
+| GET / POST     | `/api/admin/words`              | 用語一覧（`page` / `limit` ページング） / 追加 |
 | PATCH / DELETE | `/api/admin/words/:id`          | 用語更新 / 削除                |
 | GET            | `/api/admin/reports`            | 記事報告一覧                   |
 | POST           | `/api/admin/reports/:id/accept` | 記事報告承認（記事削除）       |

@@ -35,6 +35,7 @@ cp .env.example .env
 | `ADMIN_JWT_SECRET`              | 本番必須      | 32 文字以上のランダムな秘密文字列                         | 管理ログイン Cookie の JWT 署名                           |
 | `OPENAI_API_KEY`                | クロール必須  | OpenAI Platform の API key                                | プレスリリース要約と用語抽出                              |
 | `OPENAI_MODEL`                  | 任意          | 使用する OpenAI モデル名。未設定時は `gpt-5.5`            | AI 要約で使うモデルの切り替え                             |
+| `USD_TO_JPY_RATE`               | 任意          | 例: `160`。未設定時は `160`                               | 管理画面の LLM コストを円換算するための概算レート         |
 | `SUPABASE_URL`                  | DB 利用時必須 | Supabase Project Settings の Project URL                  | サーバー側 Supabase 接続                                  |
 | `SUPABASE_SERVICE_ROLE_KEY`     | DB 利用時必須 | Supabase Project API keys の `service_role` key           | サーバー側 DB 操作用。クライアントに出さない              |
 | `NEXT_PUBLIC_SUPABASE_URL`      | 必要時のみ    | `SUPABASE_URL` と同じ Project URL                         | ブラウザ側 Supabase 利用が必要になった場合の公開 URL      |

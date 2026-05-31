@@ -365,9 +365,9 @@ export async function listUsageDaily(): Promise<UsageDaily[]> {
   const { data, error } = await supabase
     .from("llm_usage_daily")
     .select("*")
-    .order("usage_date", { ascending: true })
-    .limit(90);
+    .order("usage_date", { ascending: false })
+    .limit(120);
   if (error?.code === "PGRST205") return fixtureUsage;
   if (error) throw error;
-  return (data ?? []) as UsageDaily[];
+  return ((data ?? []) as UsageDaily[]).sort((a, b) => a.usage_date.localeCompare(b.usage_date));
 }

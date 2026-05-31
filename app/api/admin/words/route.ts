@@ -1,20 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
 import { revalidatePath } from "next/cache";
+import { listTermsPage } from "@/lib/data";
 import { termInputSchema } from "@/lib/schemas";
 import { isSafeOrigin } from "@/lib/security";
 import { getOptionalServiceSupabase } from "@/lib/supabase";
 
-export async function GET() {
-  const supabase = getOptionalServiceSupabase();
-  if (!supabase) return NextResponse.json([]);
-  const { data, error } = await supabase.from("terms_with_article_count").select("*").order("reading");
-  if (error?.code === "PGRST205") {
-    const fallback = await supabase.from("terms").select("*").order("reading");
-    return fallback.error
-      ? NextResponse.json({ error: fallback.error.message }, { status: 400 })
-      : NextResponse.json(fallback.data);
-  }
-  return error ? NextResponse.json({ error: error.message }, { status: 400 }) : NextResponse.json(data);
+export async function GET(request: NextRequest) {
+  const page = await listTermsPage(Object.fromEntries(new URL(request.url).searchParams));
+  return NextResponse.json(page);
 }
 
 export async function POST(request: NextRequest) {

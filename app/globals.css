@@ -634,6 +634,29 @@ button {
   padding: 18px;
 }
 
+.cost-chart {
+  display: grid;
+  grid-template-columns: 72px minmax(0, 1fr);
+  gap: 14px;
+  align-items: stretch;
+}
+
+.cost-axis {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: 18px 0;
+  color: var(--color-muted);
+  font-size: 12px;
+  text-align: right;
+  white-space: nowrap;
+}
+
+.cost-chart .bar-chart {
+  min-width: 0;
+  overflow-x: auto;
+}
+
 .bar-chart-item {
   display: grid;
   gap: 8px;
@@ -855,6 +878,21 @@ button {
   .bug-report-meta div {
     grid-template-columns: 1fr;
     gap: 2px;
+  }
+
+  .cost-chart {
+    grid-template-columns: 1fr;
+    gap: 8px;
+  }
+
+  .cost-axis {
+    flex-direction: row;
+    padding: 0 4px;
+    text-align: left;
+  }
+
+  .cost-chart .bar-chart {
+    grid-auto-columns: minmax(16px, 28px);
   }
 }
 

@@ -8,7 +8,7 @@ vi.mock("@/lib/supabase", () => ({
   getOptionalServiceSupabase: getOptionalServiceSupabaseMock
 }));
 
-import { listArticles, listTermsPage } from "@/lib/data";
+import { listArticles, listTermsPage, listUsageDaily } from "@/lib/data";
 
 describe("data pagination", () => {
   beforeEach(() => {
@@ -73,5 +73,38 @@ describe("data pagination", () => {
     expect(request.or).toHaveBeenCalledWith(
       "reading.ilike.あ%,reading.ilike.い%,reading.ilike.う%,reading.ilike.え%,reading.ilike.お%,reading.ilike.ア%,reading.ilike.イ%,reading.ilike.ウ%,reading.ilike.エ%,reading.ilike.オ%"
     );
+  });
+
+  it("loads recent usage rows and returns them by ascending date", async () => {
+    const limit = vi.fn().mockResolvedValue({
+      data: [
+        {
+          usage_date: "2026-05-02",
+          model: "gpt-5.5",
+          input_tokens: 20,
+          output_tokens: 10,
+          cost_usd: 0.02
+        },
+        {
+          usage_date: "2026-05-01",
+          model: "gpt-5.5",
+          input_tokens: 10,
+          output_tokens: 5,
+          cost_usd: 0.01
+        }
+      ],
+      error: null
+    });
+    const order = vi.fn(() => ({ limit }));
+    const select = vi.fn(() => ({ order }));
+    const from = vi.fn(() => ({ select }));
+    getOptionalServiceSupabaseMock.mockReturnValue({ from });
+
+    const result = await listUsageDaily();
+
+    expect(from).toHaveBeenCalledWith("llm_usage_daily");
+    expect(order).toHaveBeenCalledWith("usage_date", { ascending: false });
+    expect(limit).toHaveBeenCalledWith(120);
+    expect(result.map((row) => row.usage_date)).toEqual(["2026-05-01", "2026-05-02"]);
   });
 });
