@@ -21,6 +21,11 @@ function orderByArticleDate(articles: Article[]) {
   });
 }
 
+function totalFromRangeError(error: { details?: string | null } | null | undefined, fallback: number) {
+  const match = error?.details?.match(/only\s+(\d+)\s+rows/i);
+  return match ? Number(match[1]) : fallback;
+}
+
 export async function listSources(): Promise<Source[]> {
   const supabase = getOptionalServiceSupabase();
   if (!supabase) return fixtureSources;
@@ -74,6 +79,15 @@ export async function listArticles(searchParams: unknown = {}) {
   const from = (query.page - 1) * query.limit;
   const to = from + query.limit - 1;
   const { data, count, error } = await request.range(from, to);
+  if (error?.code === "PGRST103") {
+    return {
+      articles: [],
+      total: totalFromRangeError(error, from),
+      page: query.page,
+      limit: query.limit,
+      hasMore: false
+    };
+  }
   if (error?.code === "PGRST205") {
     const fallback = orderByArticleDate(fixtureArticles);
     return {
@@ -166,6 +180,15 @@ export async function listTermsPage(searchParams: unknown = {}) {
   if (query.initial) request = request.ilike("reading", `${query.initial}%`);
   if (query.q) request = request.or(`headword.ilike.${query.q}%,reading.ilike.${query.q}%`);
   let { data, count, error } = await request.range(from, to);
+  if (error?.code === "PGRST103") {
+    return {
+      terms: [],
+      total: totalFromRangeError(error, from),
+      page: query.page,
+      limit: query.limit,
+      hasMore: false
+    };
+  }
   if (error?.code === "PGRST205") {
     let fallback = supabase.from("terms").select("*", { count: "exact" }).order("reading", { ascending: true });
     if (query.initial) fallback = fallback.ilike("reading", `${query.initial}%`);
@@ -174,6 +197,15 @@ export async function listTermsPage(searchParams: unknown = {}) {
     data = fallbackResult.data;
     count = fallbackResult.count;
     error = fallbackResult.error;
+    if (error?.code === "PGRST103") {
+      return {
+        terms: [],
+        total: totalFromRangeError(error, from),
+        page: query.page,
+        limit: query.limit,
+        hasMore: false
+      };
+    }
     if (error?.code === "PGRST205") {
       const rows = fixtureTerms.filter((term) => {
         if (query.initial && !term.reading.startsWith(query.initial)) return false;
