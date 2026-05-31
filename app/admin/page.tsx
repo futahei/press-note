@@ -31,7 +31,8 @@ export default async function AdminPage() {
   const currentMonthDateKeys = getCurrentMonthDateKeys();
   const monthlyCostByDate = openAiCosts.costs.reduce<Record<string, { costUsd: number }>>((acc, row) => {
     acc[row.usage_date] ??= { costUsd: 0 };
-    acc[row.usage_date].costUsd += Number(row.cost_usd);
+    const costUsd = Number(row.cost_usd);
+    acc[row.usage_date].costUsd += Number.isFinite(costUsd) ? costUsd : 0;
     return acc;
   }, {});
   const chartRows = currentMonthDateKeys.map((dateKey) => {
@@ -46,7 +47,6 @@ export default async function AdminPage() {
   const maxCostYen = Math.max(...chartRows.map((row) => row.costYen), 1);
   const monthlyCostUsd = chartRows.reduce((sum, row) => sum + row.costUsd, 0);
   const monthlyCostYen = Math.round(monthlyCostUsd * usdToJpyRate);
-  const lineItemTotals = openAiCosts.lineItemTotals;
   const visibleTableRows = chartRows.filter((row) => row.costUsd > 0);
 
   return (
@@ -116,13 +116,6 @@ export default async function AdminPage() {
               </div>
             ))}
           </div>
-        </div>
-        <div className="chips" aria-label="費目別内訳">
-          {Object.entries(lineItemTotals).map(([lineItem, cost]) => (
-            <span className="chip" key={lineItem}>
-              {lineItem}: 約 {Math.round(cost * usdToJpyRate).toLocaleString("ja-JP")} 円
-            </span>
-          ))}
         </div>
         <div className="table-wrap">
           <table className="table">

@@ -4,15 +4,13 @@ const OPENAI_COSTS_URL = "https://api.openai.com/v1/organization/costs";
 const JAPAN_TIME_ZONE = "Asia/Tokyo";
 
 type CostBucketWidth = "1d" | "1h";
+type OpenAICostAmount = number | string | { value?: number | string | null; currency?: string | null } | null;
 
 type OpenAICostBucket = {
   start_time: number;
   end_time: number;
   results?: Array<{
-    amount?: {
-      value?: number;
-      currency?: string;
-    };
+    amount?: OpenAICostAmount;
     api_key_id?: string | null;
     line_item?: string | null;
     project_id?: string | null;
@@ -32,7 +30,6 @@ export type OpenAICostDaily = {
 
 export type OpenAICostDashboard = {
   costs: OpenAICostDaily[];
-  lineItemTotals: Record<string, number>;
   available: boolean;
   error: string | null;
 };
@@ -92,8 +89,14 @@ function bucketDateKey(bucket: OpenAICostBucket) {
   return getJstDateKey(new Date(bucket.start_time * 1000));
 }
 
+function normalizeCostAmount(amount: OpenAICostAmount | undefined) {
+  const value = typeof amount === "object" && amount !== null ? amount.value : amount;
+  const numeric = typeof value === "string" ? Number(value) : value;
+  return typeof numeric === "number" && Number.isFinite(numeric) ? numeric : 0;
+}
+
 function sumBucketCost(bucket: OpenAICostBucket) {
-  return (bucket.results ?? []).reduce((sum, result) => sum + (result.amount?.value ?? 0), 0);
+  return (bucket.results ?? []).reduce((sum, result) => sum + normalizeCostAmount(result.amount), 0);
 }
 
 function addOptionalArrayParam(params: URLSearchParams, name: string, value?: string) {
@@ -147,22 +150,16 @@ async function fetchOpenAICostBuckets({
 
 function aggregateDailyCosts(buckets: OpenAICostBucket[]) {
   const daily = new Map<string, number>();
-  const lineItemTotals: Record<string, number> = {};
 
   for (const bucket of buckets) {
     const dateKey = bucketDateKey(bucket);
     daily.set(dateKey, (daily.get(dateKey) ?? 0) + sumBucketCost(bucket));
-    for (const result of bucket.results ?? []) {
-      const label = result.line_item ?? "その他";
-      lineItemTotals[label] = (lineItemTotals[label] ?? 0) + (result.amount?.value ?? 0);
-    }
   }
 
   return {
     costs: [...daily.entries()]
       .map(([usage_date, cost_usd]) => ({ usage_date, cost_usd }))
-      .sort((a, b) => a.usage_date.localeCompare(b.usage_date)),
-    lineItemTotals
+      .sort((a, b) => a.usage_date.localeCompare(b.usage_date))
   };
 }
 
@@ -170,7 +167,6 @@ export async function listOpenAICostsForCurrentMonth(now = new Date()): Promise<
   if (!env("OPENAI_ADMIN_API_KEY")) {
     return {
       costs: [],
-      lineItemTotals: {},
       available: false,
       error: "OPENAI_ADMIN_API_KEY is not set"
     };
@@ -201,7 +197,6 @@ export async function listOpenAICostsForCurrentMonth(now = new Date()): Promise<
   } catch (error) {
     return {
       costs: [],
-      lineItemTotals: {},
       available: true,
       error: error instanceof Error ? error.message : "OpenAI costs request failed"
     };
