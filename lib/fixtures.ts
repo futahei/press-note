@@ -1,4 +1,4 @@
-import type { Article, Report, Source, Term, UsageDaily } from "@/lib/types";
+import type { Article, BugReport, Report, Source, Term, UsageDaily } from "@/lib/types";
 
 const now = new Date("2026-05-30T08:00:00+09:00");
 
@@ -80,6 +80,31 @@ export const fixtureReports: Report[] = [
     created_at: now.toISOString(),
     resolved_at: null,
     article: fixtureArticles[1]
+  }
+];
+
+export const fixtureBugReports: BugReport[] = [
+  {
+    id: "99999999-9999-4999-8999-999999999999",
+    message: "記事一覧で企業フィルターを操作したあと、一覧が更新されませんでした。",
+    path: "/articles?source=11111111-1111-4111-8111-111111111111",
+    user_agent: "Mozilla/5.0",
+    viewport: "1440x900",
+    language: "ja-JP",
+    timezone: "Asia/Tokyo",
+    logs: [
+      {
+        level: "error",
+        message: "Example client error",
+        source: "/articles",
+        lineno: 12,
+        colno: 4,
+        occurred_at: now.toISOString()
+      }
+    ],
+    status: "open",
+    created_at: now.toISOString(),
+    resolved_at: null
   }
 ];
 

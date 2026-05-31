@@ -17,6 +17,7 @@
 | **記事 (Article)**      | クロールで取得した個別プレスリリース。AI による 90〜110 文字程度の要約を持つ          |
 | **用語 (Term)**         | 記事から AI が自動抽出した専門用語。`見出し語` `読み方` `解説` `関連記事` を持つ      |
 | **報告 (Report)**       | ユーザーが「プレスリリースではない」または「同じ記事がある」と申告した記事への通知    |
+| **不具合報告 (BugReport)** | ユーザーが匿名で送るアプリ不具合の報告。本文と自動取得されたパス・ブラウザ情報・直近エラーログを持つ |
 | **購読 (Subscription)** | Web Push の購読情報（endpoint, keys）                                                 |
 
 ---
@@ -72,6 +73,13 @@
 - 購読中の場合は「OFF にする」ボタンを表示
 - 購読中の場合は「テスト通知を送る」ボタン
 
+#### 2.1.7 共通不具合報告
+
+- 全画面で右下に不具合報告アイコンを固定表示する
+- クリックでダイアログを開き、ユーザーから自由記述の報告本文を匿名で受け付ける
+- 送信時に現在のパス、User-Agent、viewport、言語、タイムゾーン、直近 20 件までの `error` / `unhandledrejection` ログを自動送信する
+- 送信中はローディングアイコンを表示する
+
 ### 2.2 管理画面（パスワード認証）
 
 #### 2.2.1 ログイン `/admin/login`
@@ -82,7 +90,7 @@
 
 #### 2.2.2 管理ダッシュボード `/admin`
 
-- 監視中ソース数、今日の記事数、未対応の報告数、用語数のサマリー
+- 監視中ソース数、今日の記事数、未対応の報告数、未対応の不具合報告数、用語数のサマリー
 - **LLM コストグラフ**: 直近 30 日分の日次 OpenAI 使用料（USD）を棒グラフで表示。月次合計とモデル別内訳をサマリー表示
 - 各管理ページへのナビゲーション
 
@@ -108,6 +116,12 @@
 - 未対応の報告一覧（報告理由・記事タイトル・要約・報告日時・本家リンク）
 - 「記事を削除」（記事と関連用語紐付けを削除、URL は重複検知用にブラックリスト化）
 - 「報告を却下」（記事は残し、報告のみクローズ）
+
+#### 2.2.6 不具合報告管理 `/admin/bug-reports`
+
+- 未対応の不具合報告一覧を表示する
+- 表示項目: 報告本文、送信日時、パス、viewport、言語、タイムゾーン、User-Agent、直近エラーログ
+- 「対応済みにする」で不具合報告をクローズする
 
 ### 2.3 バックグラウンド処理（Cron）
 
@@ -300,6 +314,22 @@ create table reports (
 );
 create unique index on reports (article_id) where status = 'open';
 
+-- 不具合報告
+create table bug_reports (
+  id uuid primary key default gen_random_uuid(),
+  message text not null,
+  path text not null,
+  user_agent text,
+  viewport text,
+  language text,
+  timezone text,
+  logs jsonb not null default '[]'::jsonb,
+  status text not null default 'open' check (status in ('open','resolved')),
+  created_at timestamptz not null default now(),
+  resolved_at timestamptz
+);
+create index on bug_reports (status, created_at desc);
+
 -- 報告承認済み / AI 判定除外 URL
 create table rejected_article_urls (
   url text primary key,
@@ -362,6 +392,7 @@ with (security_invoker = true) as ...;
 | GET      | `/api/terms`               | 用語一覧（`?initial=あ&q=`）                      |
 | GET      | `/api/terms/:id`           | 用語詳細 + 関連記事                               |
 | POST     | `/api/articles/:id/report` | 記事報告。body: `{ reason: "not_press_release" \| "duplicate" }` |
+| POST     | `/api/bug-reports`         | 匿名不具合報告。body: `{ message, path, user_agent, viewport, language, timezone, logs[] }` |
 | POST     | `/api/push/subscribe`      | プッシュ通知購読登録                              |
 | DELETE   | `/api/push/subscribe`      | 購読解除                                          |
 
@@ -379,6 +410,7 @@ with (security_invoker = true) as ...;
 | GET            | `/api/admin/reports`            | 報告一覧                       |
 | POST           | `/api/admin/reports/:id/accept` | 報告承認（記事削除）           |
 | POST           | `/api/admin/reports/:id/reject` | 報告却下                       |
+| POST           | `/api/admin/bug-reports/:id/resolve` | 不具合報告を対応済みにする |
 
 ### 6.3 Cron API（Supabase Cron から `Authorization: Bearer ${CRON_SECRET}` 付きで呼ばれる）
 
@@ -486,9 +518,11 @@ press-note/
 │   │   ├── page.tsx
 │   │   ├── sources/page.tsx
 │   │   ├── words/page.tsx
-│   │   └── reports/page.tsx
+│   │   ├── reports/page.tsx
+│   │   └── bug-reports/page.tsx
 │   ├── api/
 │   │   ├── articles/...
+│   │   ├── bug-reports/route.ts
 │   │   ├── terms/...
 │   │   ├── push/subscribe/route.ts
 │   │   ├── admin/...
@@ -525,7 +559,7 @@ press-note/
 - `lib/crawler.ts` の探索プロンプト
 - `lib/openai.ts` のレスポンスバリデーション（モック）
 - `lib/auth.ts` の JWT 発行 / 検証
-- Zod スキーマの境界値（120 字超過、公開日時の形式ゆれ、報告理由など）
+- Zod スキーマの境界値（120 字超過、公開日時の形式ゆれ、報告理由、不具合報告本文・ログなど）
 
 ### 9.2 結合テスト
 

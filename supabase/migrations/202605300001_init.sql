@@ -55,6 +55,22 @@ create table if not exists reports (
 
 create unique index if not exists reports_one_open_per_article_idx on reports (article_id) where status = 'open';
 
+create table if not exists bug_reports (
+  id uuid primary key default gen_random_uuid(),
+  message text not null,
+  path text not null,
+  user_agent text,
+  viewport text,
+  language text,
+  timezone text,
+  logs jsonb not null default '[]'::jsonb,
+  status text not null default 'open' check (status in ('open','resolved')),
+  created_at timestamptz not null default now(),
+  resolved_at timestamptz
+);
+
+create index if not exists bug_reports_status_created_idx on bug_reports (status, created_at desc);
+
 create table if not exists rejected_article_urls (
   url text primary key,
   article_id uuid references articles(id) on delete set null,
@@ -116,6 +132,7 @@ alter table articles enable row level security;
 alter table terms enable row level security;
 alter table article_terms enable row level security;
 alter table reports enable row level security;
+alter table bug_reports enable row level security;
 alter table rejected_article_urls enable row level security;
 alter table push_subscriptions enable row level security;
 alter table llm_usage_logs enable row level security;

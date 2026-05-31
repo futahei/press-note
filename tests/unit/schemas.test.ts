@@ -3,6 +3,7 @@ import {
   articleQuerySchema,
   articleReportSchema,
   articleSummarySchema,
+  bugReportInputSchema,
   sourceInputSchema,
   termQuerySchema,
   termInputSchema
@@ -91,6 +92,27 @@ describe("schemas", () => {
     expect(articleReportSchema.parse({ reason: "duplicate" }).reason).toBe("duplicate");
     expect(articleReportSchema.parse({}).reason).toBe("not_press_release");
     expect(() => articleReportSchema.parse({ reason: "other" })).toThrow();
+  });
+
+  it("accepts anonymous bug reports with client context", () => {
+    const report = bugReportInputSchema.parse({
+      message: "一覧画面でボタンを押しても反応しません。",
+      path: "/articles?source=11111111-1111-4111-8111-111111111111",
+      user_agent: "Mozilla/5.0",
+      viewport: "390x844",
+      language: "ja-JP",
+      timezone: "Asia/Tokyo",
+      logs: [
+        {
+          level: "error",
+          message: "Button handler failed",
+          occurred_at: "2026-05-31T00:00:00.000Z"
+        }
+      ]
+    });
+
+    expect(report.logs).toHaveLength(1);
+    expect(report.path).toContain("/articles");
   });
 
   it("treats empty article query fields as unspecified", () => {

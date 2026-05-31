@@ -31,6 +31,10 @@ export default async function AdminPage() {
           <strong>{summary.openReportCount}</strong>
         </div>
         <div className="stat">
+          <span className="small">不具合報告</span>
+          <strong>{summary.openBugReportCount}</strong>
+        </div>
+        <div className="stat">
           <span className="small">用語</span>
           <strong>{summary.termCount}</strong>
         </div>
@@ -94,6 +98,9 @@ export default async function AdminPage() {
         </Link>
         <Link className="button-secondary" href="/admin/reports">
           報告管理
+        </Link>
+        <Link className="button-secondary" href="/admin/bug-reports">
+          不具合報告
         </Link>
       </div>
     </div>

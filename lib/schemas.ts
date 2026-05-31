@@ -76,6 +76,25 @@ export const articleReportSchema = z.object({
   reason: reportReasonSchema.default("not_press_release")
 });
 
+export const bugReportLogSchema = z.object({
+  level: z.enum(["error", "unhandledrejection"]),
+  message: z.string().trim().min(1).max(1000),
+  source: z.string().trim().max(500).optional(),
+  lineno: z.number().int().optional(),
+  colno: z.number().int().optional(),
+  occurred_at: z.string().datetime().optional()
+});
+
+export const bugReportInputSchema = z.object({
+  message: z.string().trim().min(1).max(2000),
+  path: z.string().trim().min(1).max(500),
+  user_agent: z.string().trim().max(500).optional().default(""),
+  viewport: z.string().trim().max(50).optional().default(""),
+  language: z.string().trim().max(80).optional().default(""),
+  timezone: z.string().trim().max(120).optional().default(""),
+  logs: z.array(bugReportLogSchema).max(20).default([])
+});
+
 export const previewArticleSchema = articleSummarySchema.extend({
   url: z.string().url()
 });

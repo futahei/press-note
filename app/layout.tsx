@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
+import { BugReportButton } from "@/components/BugReportButton";
 import { ArchiveIcon, BellIcon, BookIcon, HomeIcon, ShieldIcon } from "@/components/Icons";
 import "./globals.css";
 
@@ -54,6 +55,7 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
             <p>PressNote は登録した企業のプレスリリースを収集し、要約と用語解説を保存します。</p>
           </div>
         </footer>
+        <BugReportButton />
       </body>
     </html>
   );

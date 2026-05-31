@@ -1,7 +1,14 @@
 import { articleQuerySchema, termQuerySchema } from "@/lib/schemas";
 import { getOptionalServiceSupabase } from "@/lib/supabase";
-import type { Article, Report, Source, Term, UsageDaily } from "@/lib/types";
-import { fixtureArticles, fixtureReports, fixtureSources, fixtureTerms, fixtureUsage } from "@/lib/fixtures";
+import type { Article, BugReport, Report, Source, Term, UsageDaily } from "@/lib/types";
+import {
+  fixtureArticles,
+  fixtureBugReports,
+  fixtureReports,
+  fixtureSources,
+  fixtureTerms,
+  fixtureUsage
+} from "@/lib/fixtures";
 
 export const ARTICLES_PER_PAGE = 30;
 
@@ -166,25 +173,28 @@ export async function getAdminSummary() {
       sourceCount: fixtureSources.length,
       todayArticleCount: fixtureArticles.length,
       openReportCount: fixtureReports.length,
+      openBugReportCount: fixtureBugReports.length,
       termCount: fixtureTerms.length
     };
   }
 
   const today = new Date();
   today.setHours(0, 0, 0, 0);
-  const [sources, articles, reports, terms] = await Promise.all([
+  const [sources, articles, reports, bugReports, terms] = await Promise.all([
     supabase.from("sources").select("id", { count: "exact", head: true }).eq("enabled", true),
     supabase.from("articles").select("id", { count: "exact", head: true }).gte("fetched_at", today.toISOString()),
     supabase.from("reports").select("id", { count: "exact", head: true }).eq("status", "open"),
+    supabase.from("bug_reports").select("id", { count: "exact", head: true }).eq("status", "open"),
     supabase.from("terms").select("id", { count: "exact", head: true })
   ]);
 
-  for (const result of [sources, articles, reports, terms]) {
+  for (const result of [sources, articles, reports, bugReports, terms]) {
     if (result.error?.code === "PGRST205") {
       return {
         sourceCount: fixtureSources.length,
         todayArticleCount: fixtureArticles.length,
         openReportCount: fixtureReports.length,
+        openBugReportCount: fixtureBugReports.length,
         termCount: fixtureTerms.length
       };
     }
@@ -195,6 +205,7 @@ export async function getAdminSummary() {
     sourceCount: sources.count ?? 0,
     todayArticleCount: articles.count ?? 0,
     openReportCount: reports.count ?? 0,
+    openBugReportCount: bugReports.count ?? 0,
     termCount: terms.count ?? 0
   };
 }
@@ -211,6 +222,20 @@ export async function listOpenReports(): Promise<Report[]> {
   if (error?.code === "PGRST205") return fixtureReports;
   if (error) throw error;
   return (data ?? []) as Report[];
+}
+
+export async function listOpenBugReports(): Promise<BugReport[]> {
+  const supabase = getOptionalServiceSupabase();
+  if (!supabase) return fixtureBugReports;
+
+  const { data, error } = await supabase
+    .from("bug_reports")
+    .select("*")
+    .eq("status", "open")
+    .order("created_at", { ascending: false });
+  if (error?.code === "PGRST205") return fixtureBugReports;
+  if (error) throw error;
+  return (data ?? []) as BugReport[];
 }
 
 export async function listUsageDaily(): Promise<UsageDaily[]> {

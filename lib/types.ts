@@ -40,6 +40,29 @@ export type Report = {
   article?: Article | null;
 };
 
+export type BugReportLog = {
+  level: "error" | "unhandledrejection";
+  message: string;
+  source?: string;
+  lineno?: number;
+  colno?: number;
+  occurred_at: string;
+};
+
+export type BugReport = {
+  id: string;
+  message: string;
+  path: string;
+  user_agent: string | null;
+  viewport: string | null;
+  language: string | null;
+  timezone: string | null;
+  logs: BugReportLog[];
+  status: "open" | "resolved";
+  created_at: string;
+  resolved_at: string | null;
+};
+
 export type UsageDaily = {
   usage_date: string;
   model: string;

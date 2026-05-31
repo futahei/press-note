@@ -96,6 +96,21 @@ export function FlagIcon(props: IconProps) {
   );
 }
 
+export function BugIcon(props: IconProps) {
+  return (
+    <IconBase {...props}>
+      <path d="M8 7.5a4 4 0 0 1 8 0" />
+      <path d="M6 11h12" />
+      <path d="M12 20a6 6 0 0 0 6-6v-3H6v3a6 6 0 0 0 6 6Z" />
+      <path d="M4 14H2" />
+      <path d="M22 14h-2" />
+      <path d="m5 19-2 2" />
+      <path d="m19 19 2 2" />
+      <path d="M12 11v9" />
+    </IconBase>
+  );
+}
+
 export function XIcon(props: IconProps) {
   return (
     <IconBase {...props}>
