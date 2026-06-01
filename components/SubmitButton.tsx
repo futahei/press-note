@@ -1,7 +1,7 @@
 "use client";
 
 import type { ReactNode } from "react";
-import { useState } from "react";
+import { useFormStatus } from "react-dom";
 
 export function SubmitButton({
   children,
@@ -12,17 +12,10 @@ export function SubmitButton({
   className: string;
   pendingLabel?: string;
 }) {
-  const [pending, setPending] = useState(false);
+  const { pending } = useFormStatus();
 
   return (
-    <button
-      className={className}
-      type="submit"
-      disabled={pending}
-      onClick={(event) => {
-        if (event.currentTarget.form?.checkValidity()) setPending(true);
-      }}
-    >
+    <button className={className} type="submit" disabled={pending}>
       {pending ? <span className="loading-spinner" aria-hidden="true" /> : null}
       {pending ? (pendingLabel ?? children) : children}
     </button>

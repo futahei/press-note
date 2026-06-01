@@ -26,11 +26,22 @@ export async function verifyAdminToken(token: string | undefined): Promise<boole
   }
 }
 
-export function adminCookieOptions() {
+function isSecureRequest(request?: Request): boolean {
+  const forwardedProto = request?.headers.get("x-forwarded-proto")?.split(",")[0]?.trim();
+  if (forwardedProto) {
+    return forwardedProto === "https";
+  }
+  if (request) {
+    return new URL(request.url).protocol === "https:";
+  }
+  return process.env.NODE_ENV === "production";
+}
+
+export function adminCookieOptions(request?: Request) {
   return {
     httpOnly: true,
     sameSite: "lax" as const,
-    secure: process.env.NODE_ENV === "production",
+    secure: isSecureRequest(request),
     path: "/",
     maxAge: 90 * 24 * 60 * 60
   };

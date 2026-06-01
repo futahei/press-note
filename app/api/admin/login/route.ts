@@ -9,6 +9,6 @@ export async function POST(request: NextRequest) {
   }
 
   const response = NextResponse.redirect(new URL("/admin", request.url), { status: 303 });
-  response.cookies.set(ADMIN_COOKIE_NAME, await issueAdminToken(), adminCookieOptions());
+  response.cookies.set(ADMIN_COOKIE_NAME, await issueAdminToken(), adminCookieOptions(request));
   return response;
 }
