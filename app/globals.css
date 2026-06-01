@@ -548,6 +548,57 @@ button {
   padding: 5px 10px;
 }
 
+.feedback-kind-toggle,
+.feedback-filter-row,
+.feedback-card-head {
+  display: flex;
+  align-items: center;
+}
+
+.feedback-kind-toggle {
+  gap: 8px;
+  border: 1px solid var(--color-hairline);
+  border-radius: 18px;
+  background: var(--color-panel);
+  padding: 4px;
+}
+
+.feedback-kind-toggle button,
+.feedback-filter-row a {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  border: 0;
+  border-radius: 14px;
+  background: transparent;
+  color: var(--color-muted);
+  font-weight: 700;
+}
+
+.feedback-kind-toggle button {
+  flex: 1;
+  min-height: 40px;
+  padding: 8px 12px;
+}
+
+.feedback-kind-toggle button.active,
+.feedback-filter-row a.active {
+  background: #ffffff;
+  color: var(--color-ink);
+  box-shadow: 0 8px 20px rgba(15, 23, 42, 0.08);
+}
+
+.feedback-filter-row {
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.feedback-filter-row a {
+  border: 1px solid var(--color-hairline);
+  padding: 8px 12px;
+}
+
 .form-grid {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
@@ -741,6 +792,42 @@ button {
 
 .report-reason-chip {
   justify-self: start;
+}
+
+.feedback-card {
+  border-left: 4px solid var(--color-hairline);
+}
+
+.feedback-card.bug {
+  border-left-color: #ef4444;
+}
+
+.feedback-card.feature {
+  border-left-color: #2563eb;
+}
+
+.feedback-card-head {
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.feedback-kind-badge {
+  display: inline-flex;
+  align-items: center;
+  border-radius: 9999px;
+  padding: 4px 10px;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.feedback-kind-badge.bug {
+  color: #991b1b;
+  background: #fee2e2;
+}
+
+.feedback-kind-badge.feature {
+  color: #1d4ed8;
+  background: #dbeafe;
 }
 
 .bug-report-meta {
@@ -1349,7 +1436,7 @@ button:focus-visible,
 }
 
 .bug-report-button::after {
-  content: "不具合報告";
+  content: "フィードバック";
   font-size: 14px;
   font-weight: 700;
 }

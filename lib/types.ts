@@ -51,6 +51,7 @@ export type BugReportLog = {
 
 export type BugReport = {
   id: string;
+  kind: "bug" | "feature";
   message: string;
   path: string;
   user_agent: string | null;

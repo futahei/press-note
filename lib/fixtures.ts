@@ -86,6 +86,7 @@ export const fixtureReports: Report[] = [
 export const fixtureBugReports: BugReport[] = [
   {
     id: "99999999-9999-4999-8999-999999999999",
+    kind: "bug",
     message: "記事一覧で企業フィルターを操作したあと、一覧が更新されませんでした。",
     path: "/articles?source=11111111-1111-4111-8111-111111111111",
     user_agent: "Mozilla/5.0",
@@ -102,6 +103,20 @@ export const fixtureBugReports: BugReport[] = [
         occurred_at: now.toISOString()
       }
     ],
+    status: "open",
+    created_at: now.toISOString(),
+    resolved_at: null
+  },
+  {
+    id: "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
+    kind: "feature",
+    message: "タグごとの通知設定ができるようにしたいです。",
+    path: "/settings",
+    user_agent: null,
+    viewport: null,
+    language: null,
+    timezone: null,
+    logs: [],
     status: "open",
     created_at: now.toISOString(),
     resolved_at: null

@@ -5,7 +5,7 @@ const items = [
   { href: "/admin/sources", label: "ソース" },
   { href: "/admin/words", label: "用語" },
   { href: "/admin/reports", label: "記事報告" },
-  { href: "/admin/bug-reports", label: "不具合" }
+  { href: "/admin/bug-reports", label: "フィードバック" }
 ];
 
 export function AdminNav() {

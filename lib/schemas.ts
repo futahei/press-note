@@ -76,6 +76,8 @@ export const articleReportSchema = z.object({
   reason: reportReasonSchema.default("not_press_release")
 });
 
+export const feedbackKindSchema = z.enum(["bug", "feature"]);
+
 export const bugReportLogSchema = z.object({
   level: z.enum(["error", "unhandledrejection"]),
   message: z.string().trim().min(1).max(1000),
@@ -86,6 +88,7 @@ export const bugReportLogSchema = z.object({
 });
 
 export const bugReportInputSchema = z.object({
+  kind: feedbackKindSchema.default("bug"),
   message: z.string().trim().min(1).max(2000),
   path: z.string().trim().min(1).max(500),
   user_agent: z.string().trim().max(500).optional().default(""),

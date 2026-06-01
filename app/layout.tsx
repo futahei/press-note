@@ -57,10 +57,10 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
                 <Image alt="" className="brand-icon" height={28} src="/icon.png" width={28} />
                 <span className="brand-wordmark">PressNote</span>
               </Link>
-              <p>各社公式プレスリリースを収集し、AI要約で一覧できる個人運用のニュースノートです。</p>
+              <p>各社公式のプレスリリースを収集し、AI要約で一覧できる個人運用のニュースノートです。</p>
             </div>
-            <nav className="footer-nav" aria-label="サイトマップ">
-              <h2>サイトマップ</h2>
+            <nav className="footer-nav" aria-label="サイトメニュー">
+              <h2>サイトメニュー</h2>
               <Link href="/">最新</Link>
               <Link href="/articles">記事一覧</Link>
               <Link href="/terms">用語帳</Link>
@@ -79,9 +79,9 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
               </a>
             </nav>
             <div className="footer-note">
-              <h2>注記</h2>
+              <h2>注意</h2>
               <p>要約はAI生成です。正確な内容はリンク先の原文を確認してください。</p>
-              <p>不具合報告は画面右下のアイコンから匿名で送信できます。</p>
+              <p>不具合報告と機能要望は画面右下のフィードバックボタンから匿名で送信できます。</p>
             </div>
           </div>
         </footer>

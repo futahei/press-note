@@ -344,18 +344,21 @@ export async function listOpenReports(): Promise<Report[]> {
   return (data ?? []) as Report[];
 }
 
-export async function listOpenBugReports(): Promise<BugReport[]> {
+export async function listOpenBugReports(kind: "all" | "bug" | "feature" = "all"): Promise<BugReport[]> {
   const supabase = getOptionalServiceSupabase();
-  if (!supabase) return fixtureBugReports;
+  if (!supabase) return kind === "all" ? fixtureBugReports : fixtureBugReports.filter((report) => report.kind === kind);
 
-  const { data, error } = await supabase
+  let request = supabase
     .from("bug_reports")
     .select("*")
     .eq("status", "open")
     .order("created_at", { ascending: false });
+  if (kind !== "all") request = request.eq("kind", kind);
+
+  const { data, error } = await request;
   if (error?.code === "PGRST205") return fixtureBugReports;
   if (error) throw error;
-  return (data ?? []) as BugReport[];
+  return (data ?? []).map((report) => ({ kind: "bug", ...report })) as BugReport[];
 }
 
 export async function listUsageDaily(): Promise<UsageDaily[]> {

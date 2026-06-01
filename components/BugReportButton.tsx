@@ -1,10 +1,12 @@
 "use client";
 
 import { useEffect, useId, useMemo, useState } from "react";
-import { BugIcon, XIcon } from "@/components/Icons";
+import { BugIcon, FeedbackIcon, XIcon } from "@/components/Icons";
 import type { BugReportLog } from "@/lib/types";
 
 const MAX_LOGS = 20;
+
+type FeedbackKind = "bug" | "feature";
 
 function toLogMessage(value: unknown) {
   if (value instanceof Error) return value.message;
@@ -19,6 +21,7 @@ function toLogMessage(value: unknown) {
 export function BugReportButton() {
   const titleId = useId();
   const [open, setOpen] = useState(false);
+  const [kind, setKind] = useState<FeedbackKind>("bug");
   const [message, setMessage] = useState("");
   const [logs, setLogs] = useState<BugReportLog[]>([]);
   const [status, setStatus] = useState<"idle" | "sending" | "sent" | "error">("idle");
@@ -79,14 +82,25 @@ export function BugReportButton() {
     if (!message.trim()) return;
     setStatus("sending");
 
+    const payload =
+      kind === "feature"
+        ? {
+            kind,
+            message,
+            path: reportContext.path,
+            logs: []
+          }
+        : {
+            ...reportContext,
+            kind,
+            message,
+            logs
+          };
+
     const response = await fetch("/api/bug-reports", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        ...reportContext,
-        message,
-        logs
-      })
+      body: JSON.stringify(payload)
     }).catch(() => null);
 
     if (!response?.ok) {
@@ -109,14 +123,14 @@ export function BugReportButton() {
       <button
         type="button"
         className="bug-report-button"
-        aria-label="不具合を報告"
-        title="不具合を報告"
+        aria-label="フィードバックを送る"
+        title="フィードバックを送る"
         onClick={() => {
           setOpen(true);
           setStatus("idle");
         }}
       >
-        <BugIcon />
+        <FeedbackIcon />
       </button>
       {open ? (
         <div className="dialog-backdrop" role="presentation" onClick={close}>
@@ -131,11 +145,35 @@ export function BugReportButton() {
               <XIcon />
             </button>
             <div>
-              <h2 id={titleId}>不具合を報告</h2>
-              <p>匿名で送信されます。現在のページ、ブラウザ情報、直近のエラーログも一緒に送信します。</p>
+              <h2 id={titleId}>フィードバックを送る</h2>
+              <p>
+                不具合報告または機能要望を匿名で送信できます。不具合報告には状況確認のため直近のエラーログも含めます。
+              </p>
+            </div>
+            <div className="feedback-kind-toggle" role="radiogroup" aria-label="フィードバック種別">
+              <button
+                type="button"
+                className={kind === "bug" ? "active" : ""}
+                role="radio"
+                aria-checked={kind === "bug"}
+                onClick={() => setKind("bug")}
+              >
+                <BugIcon size={18} />
+                不具合報告
+              </button>
+              <button
+                type="button"
+                className={kind === "feature" ? "active" : ""}
+                role="radio"
+                aria-checked={kind === "feature"}
+                onClick={() => setKind("feature")}
+              >
+                <FeedbackIcon size={18} />
+                機能要望
+              </button>
             </div>
             <label className="field-stack">
-              <span className="small">内容</span>
+              <span className="small">{kind === "bug" ? "不具合の内容" : "要望の内容"}</span>
               <textarea
                 className="textarea"
                 value={message}
@@ -143,28 +181,41 @@ export function BugReportButton() {
                   setMessage(event.target.value);
                   if (status !== "idle") setStatus("idle");
                 }}
-                placeholder="何をした時に、どのような問題が起きたかを書いてください。"
+                placeholder={
+                  kind === "bug"
+                    ? "何をした時に、どのような問題が起きたかを書いてください。"
+                    : "追加してほしい機能や、改善してほしい点を書いてください。"
+                }
                 maxLength={2000}
                 required
               />
             </label>
             <div className="bug-report-context" aria-label="自動送信される情報">
               <span>{reportContext.path}</span>
-              <span>{reportContext.viewport}</span>
-              <span>{logs.length} 件のログ</span>
+              {kind === "bug" ? (
+                <>
+                  <span>{reportContext.viewport}</span>
+                  <span>{logs.length} 件のログ</span>
+                </>
+              ) : (
+                <span>要望ではログを送信しません</span>
+              )}
             </div>
-            {status === "sent" ? <p className="small" role="status">送信しました。</p> : null}
-            {status === "error" ? <p className="small form-error" role="alert">送信できませんでした。</p> : null}
+            {status === "sent" ? (
+              <p className="small" role="status">
+                送信しました。
+              </p>
+            ) : null}
+            {status === "error" ? (
+              <p className="small form-error" role="alert">
+                送信できませんでした。
+              </p>
+            ) : null}
             <div className="dialog-actions">
               <button className="button-secondary" type="button" onClick={close}>
                 キャンセル
               </button>
-              <button
-                className="button-primary"
-                type="button"
-                onClick={submit}
-                disabled={!message.trim() || status === "sending"}
-              >
+              <button className="button-primary" type="button" onClick={submit} disabled={!message.trim() || status === "sending"}>
                 {status === "sending" ? <span className="loading-spinner" aria-hidden="true" /> : null}
                 {status === "sending" ? "送信中" : "送信"}
               </button>

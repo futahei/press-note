@@ -112,7 +112,20 @@ describe("schemas", () => {
     });
 
     expect(report.logs).toHaveLength(1);
+    expect(report.kind).toBe("bug");
     expect(report.path).toContain("/articles");
+  });
+
+  it("accepts feature requests without console logs", () => {
+    const report = bugReportInputSchema.parse({
+      kind: "feature",
+      message: "タグごとの通知設定がほしいです。",
+      path: "/settings"
+    });
+
+    expect(report.kind).toBe("feature");
+    expect(report.logs).toEqual([]);
+    expect(report.path).toBe("/settings");
   });
 
   it("treats empty article query fields as unspecified", () => {

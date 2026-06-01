@@ -69,7 +69,7 @@ export default async function AdminPage() {
           <strong>{summary.openReportCount}</strong>
         </div>
         <div className="stat">
-          <span className="small">不具合報告</span>
+          <span className="small">未対応フィードバック</span>
           <strong>{summary.openBugReportCount}</strong>
         </div>
         <div className="stat">
@@ -81,7 +81,7 @@ export default async function AdminPage() {
         <div>
           <h2 className="section-title">LLM コスト</h2>
           <p className="muted">
-            当月合計 約 {monthlyCostYen.toLocaleString("ja-JP")} 円（OpenAI Costs API / 1 USD ={" "}
+            当月合計 約{monthlyCostYen.toLocaleString("ja-JP")} 円（OpenAI Costs API / 1 USD ={" "}
             {usdToJpyRate.toLocaleString("ja-JP")} 円換算）
           </p>
           {!openAiCosts.available ? (
@@ -100,15 +100,14 @@ export default async function AdminPage() {
             <span>{maxCostYen.toLocaleString("ja-JP")} 円</span>
             <span>0 円</span>
           </div>
-          <div className="bar-chart" aria-label="当月1日から末日までの日次OpenAI使用料（円）">
+          <div className="bar-chart" aria-label="当月1日から末日までの日次OpenAI使用料金">
             {chartRows.map((row) => (
               <div className="bar-chart-item" key={row.dateKey}>
                 <div className="bar-track" title={`${row.day}日 ${row.costYen.toLocaleString("ja-JP")}円`}>
                   <span
                     className="bar-fill"
                     style={{
-                      height:
-                        row.costYen > 0 ? `${Math.max(6, (row.costYen / maxCostYen) * 100)}%` : "0%"
+                      height: row.costYen > 0 ? `${Math.max(6, (row.costYen / maxCostYen) * 100)}%` : "0%"
                     }}
                   />
                 </div>
