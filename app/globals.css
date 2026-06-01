@@ -1612,6 +1612,7 @@ button:focus-visible,
     bottom: 14px;
     min-width: 44px;
     width: 44px;
+    gap: 0;
     padding: 0;
   }
 
