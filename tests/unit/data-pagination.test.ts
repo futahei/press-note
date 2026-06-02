@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 const { getOptionalServiceSupabaseMock } = vi.hoisted(() => ({
   getOptionalServiceSupabaseMock: vi.fn()
@@ -8,11 +8,15 @@ vi.mock("@/lib/supabase", () => ({
   getOptionalServiceSupabase: getOptionalServiceSupabaseMock
 }));
 
-import { listArticles, listTermsPage, listUsageDaily } from "@/lib/data";
+import { countEnabledSources, getWordOfDay, listArticles, listHomeArticles, listTermsPage, listUsageDaily, selectWordOfDayIndex } from "@/lib/data";
 
 describe("data pagination", () => {
   beforeEach(() => {
     getOptionalServiceSupabaseMock.mockReturnValue(null);
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
   });
 
   it("returns article batches with hasMore", async () => {
@@ -33,6 +37,27 @@ describe("data pagination", () => {
     expect(first.hasMore).toBe(true);
     expect(second.terms).toHaveLength(1);
     expect(second.hasMore).toBe(false);
+  });
+
+  it("falls back to recent history for the home article feed when 24h has no articles", async () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date("2026-06-02T10:00:00+09:00"));
+
+    const result = await listHomeArticles();
+
+    expect(result.hasNewArticles).toBe(false);
+    expect(result.articles).toHaveLength(2);
+  });
+
+  it("counts enabled sources for the home status", async () => {
+    await expect(countEnabledSources()).resolves.toBe(2);
+  });
+
+  it("selects the word of the day deterministically by date", async () => {
+    const date = new Date("2026-06-02T10:00:00+09:00");
+
+    expect(selectWordOfDayIndex(date, 10)).toBe(selectWordOfDayIndex(date, 10));
+    await expect(getWordOfDay(date)).resolves.toEqual(expect.objectContaining({ article_count: 1 }));
   });
 
   it("filters terms by kana row groups", async () => {

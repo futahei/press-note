@@ -12,6 +12,7 @@ import {
 
 export const ARTICLES_PER_PAGE = 18;
 export const TERMS_PER_PAGE = 24;
+export const HOME_RECENT_FALLBACK_LIMIT = 6;
 
 const initialPrefixGroups: Record<string, string[]> = {
   あ: ["あ", "い", "う", "え", "お", "ア", "イ", "ウ", "エ", "オ"],
@@ -49,6 +50,32 @@ function orderByArticleDate(articles: Article[]) {
     const bDate = new Date(b.published_at ?? b.fetched_at).getTime();
     return bDate - aDate;
   });
+}
+
+function isArticleWithinLast24Hours(article: Article, now = new Date()) {
+  const articleDate = new Date(article.published_at ?? article.fetched_at).getTime();
+  return articleDate >= now.getTime() - 24 * 60 * 60 * 1000;
+}
+
+function jstDateKey(date = new Date()) {
+  const parts = new Intl.DateTimeFormat("ja-JP-u-ca-gregory", {
+    timeZone: "Asia/Tokyo",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit"
+  }).formatToParts(date);
+  const values = Object.fromEntries(parts.map((part) => [part.type, part.value]));
+  return `${values.year}-${values.month}-${values.day}`;
+}
+
+export function selectWordOfDayIndex(date: Date, total: number) {
+  if (total <= 0) return -1;
+  const key = jstDateKey(date);
+  let hash = 0;
+  for (const character of key) {
+    hash = (hash * 31 + character.charCodeAt(0)) >>> 0;
+  }
+  return hash % total;
 }
 
 function totalFromRangeError(error: { details?: string | null } | null | undefined, fallback: number) {
@@ -158,6 +185,118 @@ export async function listRecentArticles(): Promise<Article[]> {
   if (error?.code === "PGRST205") return orderByArticleDate(fixtureArticles);
   if (error) throw error;
   return (data ?? []) as Article[];
+}
+
+export async function listHomeArticles(): Promise<{ articles: Article[]; hasNewArticles: boolean }> {
+  const supabase = getOptionalServiceSupabase();
+  const cutoff = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
+
+  if (!supabase) {
+    const rows = orderByArticleDate(fixtureArticles.filter((article) => !article.is_deleted));
+    const recent = rows.filter((article) => isArticleWithinLast24Hours(article));
+    return {
+      articles: recent.length > 0 ? recent : rows.slice(0, HOME_RECENT_FALLBACK_LIMIT),
+      hasNewArticles: recent.length > 0
+    };
+  }
+
+  const recentResult = await supabase
+    .from("articles")
+    .select("*, source:sources(id,name,url)")
+    .eq("is_deleted", false)
+    .or(`published_at.gte.${cutoff},and(published_at.is.null,fetched_at.gte.${cutoff})`)
+    .order("published_at", { ascending: false, nullsFirst: false })
+    .order("fetched_at", { ascending: false });
+
+  if (recentResult.error?.code === "PGRST205") {
+    const rows = orderByArticleDate(fixtureArticles.filter((article) => !article.is_deleted));
+    const recent = rows.filter((article) => isArticleWithinLast24Hours(article));
+    return {
+      articles: recent.length > 0 ? recent : rows.slice(0, HOME_RECENT_FALLBACK_LIMIT),
+      hasNewArticles: recent.length > 0
+    };
+  }
+  if (recentResult.error) throw recentResult.error;
+
+  if ((recentResult.data ?? []).length > 0) {
+    return {
+      articles: recentResult.data as Article[],
+      hasNewArticles: true
+    };
+  }
+
+  const fallbackResult = await supabase
+    .from("articles")
+    .select("*, source:sources(id,name,url)")
+    .eq("is_deleted", false)
+    .order("published_at", { ascending: false, nullsFirst: false })
+    .order("fetched_at", { ascending: false })
+    .limit(HOME_RECENT_FALLBACK_LIMIT);
+
+  if (fallbackResult.error?.code === "PGRST205") {
+    const rows = orderByArticleDate(fixtureArticles.filter((article) => !article.is_deleted));
+    return { articles: rows.slice(0, HOME_RECENT_FALLBACK_LIMIT), hasNewArticles: false };
+  }
+  if (fallbackResult.error) throw fallbackResult.error;
+
+  return {
+    articles: (fallbackResult.data ?? []) as Article[],
+    hasNewArticles: false
+  };
+}
+
+export async function countEnabledSources(): Promise<number> {
+  const supabase = getOptionalServiceSupabase();
+  if (!supabase) return fixtureSources.filter((source) => source.enabled).length;
+
+  const { count, error } = await supabase.from("sources").select("id", { count: "exact", head: true }).eq("enabled", true);
+  if (error?.code === "PGRST205") return fixtureSources.filter((source) => source.enabled).length;
+  if (error) throw error;
+  return count ?? 0;
+}
+
+export async function getWordOfDay(date = new Date()): Promise<(Term & { article_count: number }) | null> {
+  const supabase = getOptionalServiceSupabase();
+
+  if (!supabase) {
+    const terms = [...fixtureTerms].sort((a, b) => a.id.localeCompare(b.id));
+    const index = selectWordOfDayIndex(date, terms.length);
+    const term = index >= 0 ? terms[index] : null;
+    return term ? { ...term, article_count: term.article_count ?? 0 } : null;
+  }
+
+  const countResult = await supabase.from("terms").select("id", { count: "exact", head: true });
+  if (countResult.error?.code === "PGRST205") {
+    const terms = [...fixtureTerms].sort((a, b) => a.id.localeCompare(b.id));
+    const index = selectWordOfDayIndex(date, terms.length);
+    const term = index >= 0 ? terms[index] : null;
+    return term ? { ...term, article_count: term.article_count ?? 0 } : null;
+  }
+  if (countResult.error) throw countResult.error;
+
+  const total = countResult.count ?? 0;
+  const index = selectWordOfDayIndex(date, total);
+  if (index < 0) return null;
+
+  const { data, error } = await supabase
+    .from("terms")
+    .select("*, article_terms(article_id)")
+    .order("id", { ascending: true })
+    .range(index, index)
+    .maybeSingle();
+
+  if (error?.code === "PGRST205") {
+    const terms = [...fixtureTerms].sort((a, b) => a.id.localeCompare(b.id));
+    const fallbackIndex = selectWordOfDayIndex(date, terms.length);
+    const term = fallbackIndex >= 0 ? terms[fallbackIndex] : null;
+    return term ? { ...term, article_count: term.article_count ?? 0 } : null;
+  }
+  if (error) throw error;
+  if (!data) return null;
+
+  const row = data as Term & { article_terms?: Array<{ article_id: string }> };
+  const { article_terms: articleTerms, ...term } = row;
+  return { ...term, article_count: articleTerms?.length ?? 0 };
 }
 
 export async function getArticle(id: string): Promise<(Article & { terms: Term[] }) | null> {
