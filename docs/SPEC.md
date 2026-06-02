@@ -240,7 +240,7 @@
 | DB / Auth / Storage | Supabase (Postgres)                                                                                                               |
 | ホスティング        | Vercel                                                                                                                            |
 | バージョン管理      | GitHub                                                                                                                            |
-| AI                  | OpenAI Responses API + `web_search` ツール (`tool_choice: "required"`)、モデルは `OPENAI_MODEL` 環境変数で指定（既定: `gpt-5.5`） |
+| AI                  | OpenAI Responses API + `web_search` ツール (`tool_choice: "required"`)、モデルは `OPENAI_MODEL` 環境変数で指定（既定: `gpt-5.4-mini`） |
 | プッシュ通知        | Web Push API + `web-push` ライブラリ + VAPID 鍵                                                                                   |
 | Cron                | **Supabase Cron (pg_cron + pg_net)** — Vercel Hobby の Cron 制約を回避し、追加サービスを増やさないため                            |
 | バリデーション      | Zod                                                                                                                               |
@@ -256,7 +256,7 @@
 | `OPENAI_API_KEY`                         | OpenAI API キー                                                                    |
 | `OPENAI_ADMIN_API_KEY`                   | OpenAI Costs API 取得用の Admin API キー                                           |
 | `OPENAI_COST_API_KEY_ID`                 | 任意。Costs API の取得対象をこのサービス専用 API key に絞り込む                    |
-| `OPENAI_MODEL`                           | 使用モデル（既定: `gpt-5.5`）                                                      |
+| `OPENAI_MODEL`                           | 使用モデル（既定: `gpt-5.4-mini`）。探索・要約とも共通で使用                        |
 | `USD_TO_JPY_RATE`                        | 管理画面の LLM コストを円換算するための概算レート（既定: `160`）                   |
 | `SUPABASE_URL`                           | Supabase プロジェクト URL                                                          |
 | `SUPABASE_SERVICE_ROLE_KEY`              | サーバー専用キー（クライアント露出禁止）                                           |
@@ -366,7 +366,7 @@ create table push_subscriptions (
 create table llm_usage_logs (
   id uuid primary key default gen_random_uuid(),
   occurred_at timestamptz not null default now(),
-  model text not null,                  -- 例: 'gpt-5.5'
+  model text not null,                  -- 例: 'gpt-5.4-mini'
   purpose text not null,                -- 'crawl_step_a' / 'crawl_step_b' / 'crawl_step_c' / 'summarize' / 'extract_terms'
   input_tokens integer not null,
   output_tokens integer not null,
@@ -491,6 +491,13 @@ select cron.schedule(
 - API: `POST https://api.openai.com/v1/responses`
 - 必ず `tools: [{ type: "web_search" }]`, `tool_choice: "required"` を指定
 - 出力は Structured Output（JSON Schema）で受け取り、Zod で再検証
+
+#### モデル選定方針
+
+- 既定モデルは **`gpt-5.4-mini`**（`OPENAI_MODEL` で指定）。探索・要約とも共通で使用する
+- フラッグシップ（`gpt-5.5`）は本用途に対してオーバースペック。`gpt-5.4-mini` はトークン単価がフラッグシップの約 1/7 で、URL 分類・日本語 100 字要約・用語抽出に十分な品質を持つ
+- **web_search ツール料金（$10 / 1,000 コール + 検索コンテンツ 8,000 入力トークン/回）はモデル非依存**。`tool_choice: "required"` で毎回検索が走るため、コスト削減の最大レバーはモデルではなく **検索回数の抑制**であることに留意する
+- 要約のふりがな・要約文の品質が不足する場合は、要約処理のみ `gpt-5.4`（1 ランク上）へ引き上げる。さらにコストを詰める場合は探索を `gpt-5.4-nano` に落とす分割も可能（その際は `OPENAI_MODEL_DISCOVERY` / `OPENAI_MODEL_SUMMARY` の 2 変数に分離する）。`llm_usage_logs` の `purpose` / `model` 列で用途別実コストを観測しながら調整する
 
 ### 7.2 AI 主導の探索
 
