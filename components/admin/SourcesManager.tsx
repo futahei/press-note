@@ -134,6 +134,31 @@ export function SourcesManager({ sources }: { sources: Source[] }) {
     }
   }
 
+  async function crawlSourceNow(id: string) {
+    setBusyAction(`crawl:${id}`);
+    setMessage("");
+    try {
+      const response = await fetch(`/api/admin/sources/${id}/crawl`, {
+        method: "POST",
+        headers: { Accept: "application/json" }
+      });
+      if (!response.ok) {
+        setMessage("探索に失敗しました。Supabase と OpenAI の設定を確認してください。");
+        return;
+      }
+
+      const result = (await response.json()) as { discovered: number; processed: string[]; skipped: string[] };
+      setMessage(
+        `探索が完了しました。検出 ${result.discovered} 件 / 追加 ${result.processed.length} 件 / スキップ ${result.skipped.length} 件。`
+      );
+      router.refresh();
+    } catch {
+      setMessage("探索に失敗しました。Supabase と OpenAI の設定を確認してください。");
+    } finally {
+      setBusyAction(null);
+    }
+  }
+
   return (
     <>
       <section className="utility-card">
@@ -244,6 +269,10 @@ export function SourcesManager({ sources }: { sources: Source[] }) {
                 />
               </label>
               <div className="button-row">
+                <button className="button-primary" type="button" disabled={busy} onClick={() => crawlSourceNow(source.id)}>
+                  {busyAction === `crawl:${source.id}` ? <span className="loading-spinner" aria-hidden="true" /> : null}
+                  今すぐ探索
+                </button>
                 <button
                   className="button-secondary"
                   type="button"
