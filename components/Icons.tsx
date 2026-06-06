@@ -99,9 +99,9 @@ export function FlagIcon(props: IconProps) {
 export function FeedbackIcon(props: IconProps) {
   return (
     <IconBase {...props}>
-      <path d="M21 12a8 8 0 0 1-8 8H6l-3 2 1.2-4.2A8 8 0 1 1 21 12Z" />
-      <path d="M8 11h8" />
-      <path d="M8 15h5" />
+      <path d="M21 10a8 8 0 0 1-8 8H6l-3 2 1.2-4.2A8 8 0 1 1 21 10Z" />
+      <path d="M8 9h8" />
+      <path d="M8 13h5" />
     </IconBase>
   );
 }
