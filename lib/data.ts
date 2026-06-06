@@ -12,7 +12,7 @@ import {
 
 export const ARTICLES_PER_PAGE = 18;
 export const TERMS_PER_PAGE = 24;
-export const HOME_RECENT_FALLBACK_LIMIT = 6;
+export const HOME_ARTICLE_WINDOW_DAYS = 7;
 
 const initialPrefixGroups: Record<string, string[]> = {
   あ: ["あ", "い", "う", "え", "お", "ア", "イ", "ウ", "エ", "オ"],
@@ -52,9 +52,9 @@ function orderByArticleDate(articles: Article[]) {
   });
 }
 
-function isArticleWithinLast24Hours(article: Article, now = new Date()) {
+function isArticleWithinHomeWindow(article: Article, now = new Date()) {
   const articleDate = new Date(article.published_at ?? article.fetched_at).getTime();
-  return articleDate >= now.getTime() - 24 * 60 * 60 * 1000;
+  return articleDate >= now.getTime() - HOME_ARTICLE_WINDOW_DAYS * 24 * 60 * 60 * 1000;
 }
 
 function jstDateKey(date = new Date()) {
@@ -187,16 +187,16 @@ export async function listRecentArticles(): Promise<Article[]> {
   return (data ?? []) as Article[];
 }
 
-export async function listHomeArticles(): Promise<{ articles: Article[]; hasNewArticles: boolean }> {
+export async function listHomeArticles(): Promise<{ articles: Article[]; hasRecentArticles: boolean }> {
   const supabase = getOptionalServiceSupabase();
-  const cutoff = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
+  const cutoff = new Date(Date.now() - HOME_ARTICLE_WINDOW_DAYS * 24 * 60 * 60 * 1000).toISOString();
 
   if (!supabase) {
     const rows = orderByArticleDate(fixtureArticles.filter((article) => !article.is_deleted));
-    const recent = rows.filter((article) => isArticleWithinLast24Hours(article));
+    const recent = rows.filter((article) => isArticleWithinHomeWindow(article));
     return {
-      articles: recent.length > 0 ? recent : rows.slice(0, HOME_RECENT_FALLBACK_LIMIT),
-      hasNewArticles: recent.length > 0
+      articles: recent,
+      hasRecentArticles: recent.length > 0
     };
   }
 
@@ -210,38 +210,17 @@ export async function listHomeArticles(): Promise<{ articles: Article[]; hasNewA
 
   if (recentResult.error?.code === "PGRST205") {
     const rows = orderByArticleDate(fixtureArticles.filter((article) => !article.is_deleted));
-    const recent = rows.filter((article) => isArticleWithinLast24Hours(article));
+    const recent = rows.filter((article) => isArticleWithinHomeWindow(article));
     return {
-      articles: recent.length > 0 ? recent : rows.slice(0, HOME_RECENT_FALLBACK_LIMIT),
-      hasNewArticles: recent.length > 0
+      articles: recent,
+      hasRecentArticles: recent.length > 0
     };
   }
   if (recentResult.error) throw recentResult.error;
 
-  if ((recentResult.data ?? []).length > 0) {
-    return {
-      articles: recentResult.data as Article[],
-      hasNewArticles: true
-    };
-  }
-
-  const fallbackResult = await supabase
-    .from("articles")
-    .select("*, source:sources(id,name,url)")
-    .eq("is_deleted", false)
-    .order("published_at", { ascending: false, nullsFirst: false })
-    .order("fetched_at", { ascending: false })
-    .limit(HOME_RECENT_FALLBACK_LIMIT);
-
-  if (fallbackResult.error?.code === "PGRST205") {
-    const rows = orderByArticleDate(fixtureArticles.filter((article) => !article.is_deleted));
-    return { articles: rows.slice(0, HOME_RECENT_FALLBACK_LIMIT), hasNewArticles: false };
-  }
-  if (fallbackResult.error) throw fallbackResult.error;
-
   return {
-    articles: (fallbackResult.data ?? []) as Article[],
-    hasNewArticles: false
+    articles: (recentResult.data ?? []) as Article[],
+    hasRecentArticles: (recentResult.data ?? []).length > 0
   };
 }
 

@@ -45,14 +45,14 @@ export default async function HomePage() {
         <div className="container home-dashboard">
           <div className="status-header">
             <div className="status-copy">
-              <span className="status-pill">{homeArticles.hasNewArticles ? "新着を確認" : "追いつきました"}</span>
-              <h1>{homeArticles.hasNewArticles ? "最新のプレスリリースを確認しました" : "新着のプレスリリースはありません"}</h1>
+              <span className="status-pill">{homeArticles.hasRecentArticles ? "1週間の動き" : "追いつきました"}</span>
+              <h1>{homeArticles.hasRecentArticles ? "この1週間のプレスリリースを確認しました" : "この1週間のプレスリリースはありません"}</h1>
               <p>
-                {homeArticles.hasNewArticles ? (
-                  "直近24時間の新着を表示しています。"
+                {homeArticles.hasRecentArticles ? (
+                  "直近1週間に公開された記事を日付ごとに表示しています。"
                 ) : (
                   <>
-                    直近24時間の新着はありません。次回のチェックは <NextCheckTime /> です。
+                    直近1週間の記事はありません。次回のチェックは <NextCheckTime /> です。
                   </>
                 )}
               </p>
@@ -96,9 +96,9 @@ export default async function HomePage() {
         <div className="container article-section">
           <div className="home-section-head">
             <div>
-              <p className="section-kicker">{homeArticles.hasNewArticles ? "24時間以内" : "履歴から表示"}</p>
+              <p className="section-kicker">直近1週間</p>
               <h2 className="section-title">
-                {homeArticles.hasNewArticles ? "最新のプレスリリース" : "最近のプレスリリース（新着はまだありません）"}
+                {homeArticles.hasRecentArticles ? "この1週間のプレスリリース" : "この1週間のプレスリリースはありません"}
               </h2>
             </div>
             <Link className="button-secondary" href="/articles">

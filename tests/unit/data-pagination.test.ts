@@ -39,14 +39,24 @@ describe("data pagination", () => {
     expect(second.hasMore).toBe(false);
   });
 
-  it("falls back to recent history for the home article feed when 24h has no articles", async () => {
+  it("returns articles from the last week for the home article feed", async () => {
     vi.useFakeTimers();
     vi.setSystemTime(new Date("2026-06-02T10:00:00+09:00"));
 
     const result = await listHomeArticles();
 
-    expect(result.hasNewArticles).toBe(false);
+    expect(result.hasRecentArticles).toBe(true);
     expect(result.articles).toHaveLength(2);
+  });
+
+  it("returns an empty home article feed when the last week has no articles", async () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date("2026-06-10T10:00:00+09:00"));
+
+    const result = await listHomeArticles();
+
+    expect(result.hasRecentArticles).toBe(false);
+    expect(result.articles).toHaveLength(0);
   });
 
   it("counts enabled sources for the home status", async () => {
