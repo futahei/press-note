@@ -1,4 +1,5 @@
 import { articleQuerySchema, termQuerySchema } from "@/lib/schemas";
+import { dedupeArticlesByUrl } from "@/lib/article-url";
 import { getOptionalServiceSupabase } from "@/lib/supabase";
 import type { Article, BugReport, Report, Source, Term, UsageDaily } from "@/lib/types";
 import {
@@ -98,7 +99,7 @@ export async function listArticles(searchParams: unknown = {}) {
   const supabase = getOptionalServiceSupabase();
 
   if (!supabase) {
-    let rows = orderByArticleDate(fixtureArticles).filter((article) => !article.is_deleted);
+    let rows = dedupeArticlesByUrl(orderByArticleDate(fixtureArticles).filter((article) => !article.is_deleted));
     if (query.q) {
       rows = rows.filter((article) => `${article.title} ${article.summary}`.includes(query.q ?? ""));
     }
@@ -146,7 +147,7 @@ export async function listArticles(searchParams: unknown = {}) {
     };
   }
   if (error?.code === "PGRST205") {
-    const fallback = orderByArticleDate(fixtureArticles);
+    const fallback = dedupeArticlesByUrl(orderByArticleDate(fixtureArticles));
     return {
       articles: fallback.slice(from, from + query.limit),
       total: fallback.length,
@@ -157,8 +158,9 @@ export async function listArticles(searchParams: unknown = {}) {
   }
   if (error) throw error;
 
+  const articles = dedupeArticlesByUrl((data ?? []) as Article[]);
   return {
-    articles: (data ?? []) as Article[],
+    articles,
     total: count ?? 0,
     page: query.page,
     limit: query.limit,
@@ -171,7 +173,7 @@ export async function listRecentArticles(): Promise<Article[]> {
   const cutoff = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
 
   if (!supabase) {
-    return orderByArticleDate(fixtureArticles);
+    return dedupeArticlesByUrl(orderByArticleDate(fixtureArticles));
   }
 
   const { data, error } = await supabase
@@ -182,9 +184,9 @@ export async function listRecentArticles(): Promise<Article[]> {
     .order("published_at", { ascending: false, nullsFirst: false })
     .order("fetched_at", { ascending: false });
 
-  if (error?.code === "PGRST205") return orderByArticleDate(fixtureArticles);
+  if (error?.code === "PGRST205") return dedupeArticlesByUrl(orderByArticleDate(fixtureArticles));
   if (error) throw error;
-  return (data ?? []) as Article[];
+  return dedupeArticlesByUrl((data ?? []) as Article[]);
 }
 
 export async function listHomeArticles(): Promise<{ articles: Article[]; hasRecentArticles: boolean }> {
@@ -192,7 +194,7 @@ export async function listHomeArticles(): Promise<{ articles: Article[]; hasRece
   const cutoff = new Date(Date.now() - HOME_ARTICLE_WINDOW_DAYS * 24 * 60 * 60 * 1000).toISOString();
 
   if (!supabase) {
-    const rows = orderByArticleDate(fixtureArticles.filter((article) => !article.is_deleted));
+    const rows = dedupeArticlesByUrl(orderByArticleDate(fixtureArticles.filter((article) => !article.is_deleted)));
     const recent = rows.filter((article) => isArticleWithinHomeWindow(article));
     return {
       articles: recent,
@@ -209,7 +211,7 @@ export async function listHomeArticles(): Promise<{ articles: Article[]; hasRece
     .order("fetched_at", { ascending: false });
 
   if (recentResult.error?.code === "PGRST205") {
-    const rows = orderByArticleDate(fixtureArticles.filter((article) => !article.is_deleted));
+    const rows = dedupeArticlesByUrl(orderByArticleDate(fixtureArticles.filter((article) => !article.is_deleted)));
     const recent = rows.filter((article) => isArticleWithinHomeWindow(article));
     return {
       articles: recent,
@@ -219,7 +221,7 @@ export async function listHomeArticles(): Promise<{ articles: Article[]; hasRece
   if (recentResult.error) throw recentResult.error;
 
   return {
-    articles: (recentResult.data ?? []) as Article[],
+    articles: dedupeArticlesByUrl((recentResult.data ?? []) as Article[]),
     hasRecentArticles: (recentResult.data ?? []).length > 0
   };
 }
@@ -387,7 +389,7 @@ export async function getTerm(id: string): Promise<(Term & { articles: Article[]
   const supabase = getOptionalServiceSupabase();
   if (!supabase) {
     const term = fixtureTerms.find((item) => item.id === id);
-    return term ? { ...term, articles: fixtureArticles } : null;
+    return term ? { ...term, articles: dedupeArticlesByUrl(fixtureArticles) } : null;
   }
 
   const { data, error } = await supabase
@@ -401,7 +403,7 @@ export async function getTerm(id: string): Promise<(Term & { articles: Article[]
   const articles = ((data.article_terms ?? []) as Array<{ article: Article | null }>).flatMap((item) =>
     item.article && !item.article.is_deleted ? [item.article] : []
   );
-  return { ...(data as Term), articles: orderByArticleDate(articles) };
+  return { ...(data as Term), articles: dedupeArticlesByUrl(orderByArticleDate(articles)) };
 }
 
 export async function getAdminSummary() {

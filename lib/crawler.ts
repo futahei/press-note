@@ -1,5 +1,6 @@
 import { getServiceSupabase } from "@/lib/supabase";
 import { searchPressReleaseUrls, summarizePressReleaseUrl } from "@/lib/openai";
+import { normalizeArticleUrl } from "@/lib/article-url";
 import type { ArticleSummaryOutput, PreviewArticle } from "@/lib/schemas";
 import type { Source } from "@/lib/types";
 
@@ -86,7 +87,7 @@ async function discoverPressReleaseUrlsWithAi(
   const query = normalizeDiscoveryOptions(options);
   const result = await searchPressReleaseUrls(buildPressReleaseDiscoveryPrompt(source, query), "crawl_step_a");
   if (sourceId) await logUsage({ purpose: result.purpose, sourceId, usage: result.usage });
-  const urls = [...new Set(result.urls)];
+  const urls = [...new Set(result.urls.map(normalizeArticleUrl))];
   return query.count ? urls.slice(0, query.count) : urls;
 }
 
@@ -151,12 +152,13 @@ export async function saveSummarizedArticle({
   summary: ArticleSummaryOutput & { usage?: { input_tokens: number; output_tokens: number; cost_usd: number } };
 }) {
   const supabase = getServiceSupabase();
+  const normalizedUrl = normalizeArticleUrl(url);
   const { data: article, error: articleError } = await supabase
     .from("articles")
     .upsert(
       {
         source_id: sourceId,
-        url,
+        url: normalizedUrl,
         title: summary.title,
         summary: summary.summary,
         published_at: summary.published_at
@@ -197,10 +199,11 @@ export async function crawlSource(source: Pick<Source, "id" | "name" | "url">, n
   const skipped: string[] = [];
 
   for (const url of links) {
+    const normalizedUrl = normalizeArticleUrl(url);
     const { data: existing, error: existingError } = await supabase
       .from("articles")
       .select("id")
-      .eq("url", url)
+      .eq("url", normalizedUrl)
       .maybeSingle();
     if (existingError) throw existingError;
     if (existing) {
@@ -211,7 +214,7 @@ export async function crawlSource(source: Pick<Source, "id" | "name" | "url">, n
     const { data: rejected, error: rejectedError } = await supabase
       .from("rejected_article_urls")
       .select("url")
-      .eq("url", url)
+      .eq("url", normalizedUrl)
       .maybeSingle();
     if (rejectedError) throw rejectedError;
     if (rejected) {
@@ -219,7 +222,7 @@ export async function crawlSource(source: Pick<Source, "id" | "name" | "url">, n
       continue;
     }
 
-    const summary = await summarizePressReleaseUrl(url);
+    const summary = await summarizePressReleaseUrl(normalizedUrl);
     if (!summary.is_press_release) {
       skipped.push(url);
       continue;
@@ -229,10 +232,10 @@ export async function crawlSource(source: Pick<Source, "id" | "name" | "url">, n
       continue;
     }
 
-    const articleId = await saveSummarizedArticle({ sourceId: source.id, url, summary });
+    const articleId = await saveSummarizedArticle({ sourceId: source.id, url: normalizedUrl, summary });
     await logUsage({ purpose: "summarize", sourceId: source.id, articleId, usage: summary.usage });
 
-    processed.push(url);
+    processed.push(normalizedUrl);
   }
 
   await supabase.from("sources").update({ last_crawled_at: new Date().toISOString() }).eq("id", source.id);

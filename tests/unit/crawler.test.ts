@@ -134,6 +134,39 @@ describe("crawlSource", () => {
     expect(summarizePressReleaseUrlMock).toHaveBeenCalledTimes(23);
     expect(articleUpsert).toHaveBeenCalledTimes(22);
   });
+
+  it("deduplicates discovered article URLs by normalized destination before summarizing", async () => {
+    const { supabase, articleUpsert } = createCrawlerSupabaseMock();
+    getServiceSupabaseMock.mockReturnValue(supabase);
+    searchPressReleaseUrlsMock.mockResolvedValue({
+      urls: [
+        "https://example.com/news/release/?utm_source=mail#main",
+        "https://example.com/news/release/"
+      ],
+      usage: { input_tokens: 10, output_tokens: 5, cost_usd: 0 },
+      purpose: "crawl_step_a"
+    });
+    summarizePressReleaseUrlMock.mockResolvedValue({
+      title: "プレスリリース",
+      summary:
+        "これはテスト用のプレスリリース要約です。本文の重要な内容を日本語で自然にまとめ、読者が概要を把握できるようにしています。",
+      published_at: "2026-05-31T00:01:00+09:00",
+      is_press_release: true,
+      terms: [],
+      usage: { input_tokens: 10, output_tokens: 5, cost_usd: 0 }
+    });
+
+    const result = await crawlSource(
+      { id: "source-1", name: "テスト株式会社", url: "https://example.com/news" },
+      new Date("2026-05-31T12:00:00+09:00")
+    );
+
+    expect(result.discovered).toBe(1);
+    expect(result.processed).toEqual(["https://example.com/news/release"]);
+    expect(summarizePressReleaseUrlMock).toHaveBeenCalledTimes(1);
+    expect(summarizePressReleaseUrlMock).toHaveBeenCalledWith("https://example.com/news/release");
+    expect(articleUpsert).toHaveBeenCalledTimes(1);
+  });
 });
 
 describe("isPublishedInJstDateWindow", () => {
