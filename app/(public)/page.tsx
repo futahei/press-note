@@ -73,7 +73,7 @@ export default async function HomePage() {
             <div>
               <p className="section-kicker">今日から直近1週間</p>
               <h2 className="section-title">
-                {homeArticles.hasRecentArticles ? "今日・この1週間のプレスリリース" : "この1週間のプレスリリースはありません"}
+                {homeArticles.hasRecentArticles ? "最近のプレスリリース" : "この1週間のプレスリリースはありません"}
               </h2>
             </div>
             <Link className="button-secondary" href="/articles">
