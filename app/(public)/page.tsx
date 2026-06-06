@@ -84,12 +84,13 @@ export default async function HomePage() {
           {wordOfDay ? (
             <section className="word-of-day" aria-labelledby="word-of-day-title">
               <div className="word-of-day-copy">
-                <p className="section-kicker">今日の用語</p>
+                <p className="section-kicker">日替わり用語ピックアップ</p>
                 <h2 id="word-of-day-title">
                   {wordOfDay.headword}
                   {wordOfDay.reading ? <span>（{wordOfDay.reading}）</span> : null}
                 </h2>
                 <p>{wordOfDay.description}</p>
+                <p className="small">記事の日付とは関係なく、用語帳から日替わりで紹介しています。</p>
               </div>
               <Link className="button-secondary" href={`/terms/${wordOfDay.id}`}>
                 この用語が登場した記事を見る（{wordOfDay.article_count}件）
@@ -98,9 +99,9 @@ export default async function HomePage() {
           ) : (
             <section className="word-of-day word-of-day-empty" aria-labelledby="word-of-day-title">
               <div className="word-of-day-copy">
-                <p className="section-kicker">今日の用語</p>
+                <p className="section-kicker">日替わり用語ピックアップ</p>
                 <h2 id="word-of-day-title">用語はまだ登録されていません</h2>
-                <p>記事のAI解析が完了すると、用語帳から毎日ひとつ表示されます。</p>
+                <p>記事のAI解析が完了すると、用語帳から日替わりでひとつ表示されます。</p>
               </div>
             </section>
           )}
