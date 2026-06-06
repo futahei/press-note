@@ -1387,7 +1387,8 @@ button:focus-visible,
   align-content: center;
 }
 
-.status-copy h1 {
+.status-copy h1,
+.status-copy h2 {
   max-width: 760px;
   margin: 0;
   color: var(--color-text-primary);
@@ -1529,11 +1530,13 @@ button:focus-visible,
   text-align: center;
 }
 
+.empty-state h2,
 .empty-state h3,
 .empty-state p {
   margin: 0;
 }
 
+.empty-state h2,
 .empty-state h3 {
   color: var(--color-text-primary);
   font-size: 20px;
@@ -1868,7 +1871,8 @@ button:focus-visible,
     padding: 22px;
   }
 
-  .status-copy h1 {
+  .status-copy h1,
+  .status-copy h2 {
     font-size: 32px;
   }
 

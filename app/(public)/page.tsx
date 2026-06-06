@@ -41,29 +41,46 @@ export default async function HomePage() {
 
   return (
     <main className="page">
-      <section className="tile tile-light">
-        <div className="container home-dashboard">
-          <div className="status-header">
-            <div className="status-copy">
-              <span className="status-pill">{homeArticles.hasRecentArticles ? "1週間の動き" : "追いつきました"}</span>
-              <h1>{homeArticles.hasRecentArticles ? "この1週間のプレスリリースを確認しました" : "この1週間のプレスリリースはありません"}</h1>
-              <p>
-                {homeArticles.hasRecentArticles ? (
-                  "直近1週間に公開された記事を日付ごとに表示しています。"
-                ) : (
-                  <>
-                    直近1週間の記事はありません。次回のチェックは <NextCheckTime /> です。
-                  </>
-                )}
-              </p>
+      <section className="tile tile-parchment">
+        <div className="container article-section">
+          <div className="home-section-head">
+            <div>
+              <p className="section-kicker">今日から直近1週間</p>
+              <h1 className="section-title">
+                {homeArticles.hasRecentArticles ? "今日・この1週間のプレスリリース" : "この1週間のプレスリリースはありません"}
+              </h1>
             </div>
-            <div className="status-metric" aria-label={`現在 ${sourceCount} 社を監視中`}>
-              <span>現在</span>
-              <strong>{sourceCount}</strong>
-              <span>社を監視中</span>
-            </div>
+            <Link className="button-secondary" href="/articles">
+              すべての記事を見る
+            </Link>
           </div>
 
+          {articleGroups.length > 0 ? (
+            <div className="article-date-groups">
+              {articleGroups.map((group) => (
+                <section key={group.label} className="article-date-group" aria-label={`${group.label}の記事`}>
+                  <div className="date-divider">
+                    <span>{group.label}</span>
+                  </div>
+                  <div className="grid">
+                    {group.articles.map((article) => (
+                      <ArticleCard key={article.id} article={article} />
+                    ))}
+                  </div>
+                </section>
+              ))}
+            </div>
+          ) : (
+            <div className="empty-state">
+              <h2>プレスリリースはまだ登録されていません</h2>
+              <p>監視ソースの探索が完了すると、ここに直近1週間の記事が表示されます。</p>
+            </div>
+          )}
+        </div>
+      </section>
+
+      <section className="tile tile-light">
+        <div className="container home-dashboard">
           {wordOfDay ? (
             <section className="word-of-day" aria-labelledby="word-of-day-title">
               <div className="word-of-day-copy">
@@ -88,45 +105,28 @@ export default async function HomePage() {
             </section>
           )}
 
-          <SubscribeBanner />
-        </div>
-      </section>
-
-      <section className="tile tile-parchment">
-        <div className="container article-section">
-          <div className="home-section-head">
-            <div>
-              <p className="section-kicker">直近1週間</p>
-              <h2 className="section-title">
-                {homeArticles.hasRecentArticles ? "この1週間のプレスリリース" : "この1週間のプレスリリースはありません"}
-              </h2>
+          <div className="status-header">
+            <div className="status-copy">
+              <span className="status-pill">{homeArticles.hasRecentArticles ? "1週間の動き" : "追いつきました"}</span>
+              <h2>{homeArticles.hasRecentArticles ? "この1週間のプレスリリースを確認しました" : "この1週間のプレスリリースはありません"}</h2>
+              <p>
+                {homeArticles.hasRecentArticles ? (
+                  "直近1週間に公開された記事を日付ごとに表示しています。"
+                ) : (
+                  <>
+                    直近1週間の記事はありません。次回のチェックは <NextCheckTime /> です。
+                  </>
+                )}
+              </p>
             </div>
-            <Link className="button-secondary" href="/articles">
-              すべての記事を見る
-            </Link>
+            <div className="status-metric" aria-label={`現在 ${sourceCount} 社を監視中`}>
+              <span>現在</span>
+              <strong>{sourceCount}</strong>
+              <span>社を監視中</span>
+            </div>
           </div>
 
-          {articleGroups.length > 0 ? (
-            <div className="article-date-groups">
-              {articleGroups.map((group) => (
-                <section key={group.label} className="article-date-group" aria-label={`${group.label}の記事`}>
-                  <div className="date-divider">
-                    <span>{group.label}</span>
-                  </div>
-                  <div className="grid">
-                    {group.articles.map((article) => (
-                      <ArticleCard key={article.id} article={article} />
-                    ))}
-                  </div>
-                </section>
-              ))}
-            </div>
-          ) : (
-            <div className="empty-state">
-              <h3>プレスリリースはまだ登録されていません</h3>
-              <p>監視ソースの探索が完了すると、ここに最新の記事が表示されます。</p>
-            </div>
-          )}
+          <SubscribeBanner />
         </div>
       </section>
     </main>
