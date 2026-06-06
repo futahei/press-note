@@ -11,20 +11,31 @@ type TermsPageResponse = {
   hasMore: boolean;
 };
 
+type SearchParams = Record<string, string>;
+
 type WordsManagerProps = {
   initialTerms: Term[];
   initialPage: number;
   initialLimit: number;
   initialHasMore: boolean;
   total: number;
+  searchParams: SearchParams;
 };
+
+function buildAdminWordsUrl(searchParams: SearchParams, page: number, limit: number) {
+  const params = new URLSearchParams(searchParams);
+  params.set("page", String(page));
+  params.set("limit", String(limit));
+  return `/api/admin/words?${params.toString()}`;
+}
 
 export function WordsManager({
   initialTerms,
   initialPage,
   initialLimit,
   initialHasMore,
-  total
+  total,
+  searchParams
 }: WordsManagerProps) {
   const sentinelRef = useRef<HTMLDivElement | null>(null);
   const inFlightRef = useRef(false);
@@ -51,7 +62,7 @@ export function WordsManager({
     setLoadingMore(true);
     setLoadError(null);
     try {
-      const response = await fetch(`/api/admin/words?page=${nextPage}&limit=${initialLimit}`, {
+      const response = await fetch(buildAdminWordsUrl(searchParams, nextPage, initialLimit), {
         headers: { accept: "application/json" }
       });
       if (!response.ok) throw new Error("用語を読み込めませんでした。");
@@ -69,7 +80,7 @@ export function WordsManager({
       inFlightRef.current = false;
       setLoadingMore(false);
     }
-  }, [hasMore, initialLimit, page]);
+  }, [hasMore, initialLimit, page, searchParams]);
 
   useEffect(() => {
     const node = sentinelRef.current;

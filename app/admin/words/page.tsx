@@ -1,9 +1,26 @@
+import Link from "next/link";
 import { listTermsPage } from "@/lib/data";
 import { WordsManager } from "@/components/admin/WordsManager";
 import { SubmitButton } from "@/components/SubmitButton";
 
-export default async function AdminWordsPage() {
-  const { terms, total, page, limit, hasMore } = await listTermsPage({ limit: 24 });
+function toSingleValueParams(params: Record<string, string | string[] | undefined>) {
+  return Object.fromEntries(
+    Object.entries(params).flatMap(([key, value]) => {
+      if (key === "page" || key === "limit" || value == null) return [];
+      return [[key, Array.isArray(value) ? value[0] ?? "" : value]];
+    })
+  );
+}
+
+export default async function AdminWordsPage({
+  searchParams
+}: {
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
+}) {
+  const params = await searchParams;
+  const listParams = toSingleValueParams(params);
+  const q = typeof params.q === "string" ? params.q : "";
+  const { terms, total, page, limit, hasMore } = await listTermsPage({ ...listParams, limit: 24 });
 
   return (
     <div style={{ display: "grid", gap: 28 }}>
@@ -30,12 +47,25 @@ export default async function AdminWordsPage() {
           </SubmitButton>
         </div>
       </form>
+      <form className="filter-row">
+        <input className="input" name="q" defaultValue={q} placeholder="見出し語・読み方で検索" />
+        <button className="button-primary" type="submit">
+          検索
+        </button>
+        {q ? (
+          <Link className="button-secondary" href="/admin/words">
+            解除
+          </Link>
+        ) : null}
+      </form>
       <WordsManager
+        key={JSON.stringify(listParams)}
         initialTerms={terms}
         initialPage={page}
         initialLimit={limit}
         initialHasMore={hasMore}
         total={total}
+        searchParams={listParams}
       />
     </div>
   );

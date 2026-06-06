@@ -31,11 +31,11 @@ describe("admin words route", () => {
     };
     listTermsPageMock.mockResolvedValueOnce(payload);
 
-    const request = new Request("https://example.test/api/admin/words?page=2&limit=24");
+    const request = new Request("https://example.test/api/admin/words?page=2&limit=24&q=ロボット");
     const response = await GET(request as NextRequest);
 
     expect(response.status).toBe(200);
     await expect(response.json()).resolves.toEqual(payload);
-    expect(listTermsPageMock).toHaveBeenCalledWith({ page: "2", limit: "24" });
+    expect(listTermsPageMock).toHaveBeenCalledWith({ page: "2", limit: "24", q: "ロボット" });
   });
 });
