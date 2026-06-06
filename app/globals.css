@@ -1463,6 +1463,7 @@ button:focus-visible,
   gap: 10px;
 }
 
+.word-of-day h1,
 .word-of-day h2 {
   margin: 0;
   color: var(--color-text-primary);
@@ -1472,6 +1473,7 @@ button:focus-visible,
   letter-spacing: 0;
 }
 
+.word-of-day h1 span,
 .word-of-day h2 span {
   color: var(--color-text-secondary);
   font-size: 0.72em;
