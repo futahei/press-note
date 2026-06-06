@@ -42,11 +42,22 @@ cp .env.example .env
 | `SUPABASE_SERVICE_ROLE_KEY`     | DB 利用時必須 | Supabase Project API keys の `service_role` key           | サーバー側 DB 操作用。クライアントに出さない              |
 | `NEXT_PUBLIC_SUPABASE_URL`      | 必要時のみ    | `SUPABASE_URL` と同じ Project URL                         | ブラウザ側 Supabase 利用が必要になった場合の公開 URL      |
 | `NEXT_PUBLIC_SUPABASE_ANON_KEY` | 必要時のみ    | Supabase Project API keys の `anon` key                   | ブラウザ側 Supabase 利用が必要になった場合の公開 anon key |
+| `NEXT_PUBLIC_GA_MEASUREMENT_ID` | 任意          | Google Analytics 4 Web データストリームの `G-...` 形式 ID | Google Analytics の page_view 計測。未設定ならタグを出さない |
 | `VAPID_PUBLIC_KEY`              | Push 必須     | Web Push 用 VAPID public key                              | ブラウザの Push 購読作成                                  |
 | `VAPID_PRIVATE_KEY`             | Push 必須     | Web Push 用 VAPID private key                             | サーバーから Push 通知を送信                              |
 | `VAPID_SUBJECT`                 | Push 必須     | `mailto:you@example.com` 形式の連絡先                     | Push サービスへ送る VAPID subject                         |
 | `CRON_SECRET`                   | Cron 必須     | 32 文字以上のランダムな秘密文字列                         | Supabase Cron から `/api/cron/*` を呼ぶ Bearer 認証       |
 | `APP_ORIGIN`                    | 本番必須      | デプロイ先のオリジン。例: `https://pressnote.example.com` | 管理操作の Origin チェック                                |
+
+### Google Analytics の設定
+
+Google Analytics 4 の Web データストリームを作成し、`G-...` 形式の測定 ID を `NEXT_PUBLIC_GA_MEASUREMENT_ID` に設定してください。未設定、または `G-...` 形式でない値の場合は Google Analytics タグを出力しません。
+
+1. Google Analytics で GA4 プロパティを作成します。
+2. 管理画面の「データ ストリーム」から Web データストリームを作成します。
+3. ストリーム詳細に表示される測定 ID（例: `G-XXXXXXXXXX`）をコピーします。
+4. Vercel などの本番環境変数に `NEXT_PUBLIC_GA_MEASUREMENT_ID=G-XXXXXXXXXX` を設定します。
+5. 再デプロイ後、Google Analytics のリアルタイムレポートで page_view が入ることを確認します。
 
 ローカルで Supabase 関連の値を空にしている場合、公開ページと管理画面はモックデータで表示されます。開発時のみ `ADMIN_PASSWORD_HASH` 未設定なら、管理ログインの暫定パスワードは `admin` です。
 

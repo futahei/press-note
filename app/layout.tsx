@@ -1,8 +1,11 @@
 import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
+import { Suspense } from "react";
 import { BugReportButton } from "@/components/BugReportButton";
+import { GoogleAnalytics } from "@/components/GoogleAnalytics";
 import { ArchiveIcon, BellIcon, BookIcon, HomeIcon, ShieldIcon } from "@/components/Icons";
+import { getGoogleAnalyticsMeasurementId } from "@/lib/analytics";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -18,6 +21,8 @@ export const metadata: Metadata = {
 };
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
+  const gaMeasurementId = getGoogleAnalyticsMeasurementId();
+
   return (
     <html lang="ja">
       <body>
@@ -86,6 +91,9 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
           </div>
         </footer>
         <BugReportButton />
+        <Suspense fallback={null}>
+          <GoogleAnalytics measurementId={gaMeasurementId} />
+        </Suspense>
       </body>
     </html>
   );

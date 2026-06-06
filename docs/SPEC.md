@@ -691,3 +691,11 @@ press-note/
 - 日替わり用語ピックアップは当日の記事に紐づくものではなく、用語帳から日替わりで紹介する枠として表示する。
 - 「この1週間のプレスリリース」は既存の記事カードを再利用し、JSTの日付ごとに区切って表示する。
 - 直近1週間の記事が0件の場合は、探索完了後に表示されることが分かる空状態を表示する。
+
+## 21. Google Analytics 4 連携
+
+- `NEXT_PUBLIC_GA_MEASUREMENT_ID` に GA4 Web データストリームの `G-...` 形式の測定 ID が設定されている場合のみ、Google tag を出力する。
+- `NEXT_PUBLIC_GA_MEASUREMENT_ID` が未設定、または `G-...` 形式でない場合は、Google Analytics 関連の script を出力しない。
+- 初期化時の `gtag('config')` は `send_page_view: false` とし、App Router のクライアント遷移監視で page_view を送信する。
+- page_view の `page_path` は `pathname` と `searchParams` から生成し、検索条件付きページ遷移も計測対象にする。
+- Google Analytics の導入手順は README に記載し、本番環境では Vercel などの環境変数に `NEXT_PUBLIC_GA_MEASUREMENT_ID` を設定して再デプロイする。
