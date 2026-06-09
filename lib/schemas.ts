@@ -132,6 +132,10 @@ export const termQuerySchema = z.object({
   initial: z.preprocess(emptyStringToUndefined, z.string().trim().max(2).optional())
 });
 
+export const articleRetrySchema = z.object({
+  url: z.preprocess(emptyStringToUndefined, z.string().trim().url().optional())
+});
+
 export const pushSubscriptionSchema = z.object({
   endpoint: z.string().url(),
   keys: z.object({

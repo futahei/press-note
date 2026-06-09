@@ -126,13 +126,22 @@
 - 削除（論理削除なしの物理削除、関連は CASCADE）
 - AI が抽出した用語は **`status=published`** で即公開（管理者は事後に編集・削除）
 
-#### 2.2.5 記事報告管理 `/admin/reports`
+#### 2.2.5 記事管理 `/admin/articles`
+
+- 一覧: 企業名・タイトル・要約・公開日時・本家リンク・現在の記事 URL
+- 検索: タイトル・要約のあいまい検索。企業と日付範囲でも絞り込める。
+- 各記事ごとに「再要約」操作を持つ。再要約対象 URL は現在の記事 URL を初期値として表示し、管理者が別 URL に差し替えて実行できる。
+- 再要約時は指定 URL を正規化し、OpenAI Responses API で本文を再取得する。`is_press_release=false` の場合は既存記事を上書きせずエラーにする。
+- 再要約が成功した場合は `articles.title`、`articles.summary`、`articles.published_at`、`articles.url`、`articles.fetched_at` を更新し、`article_terms` を削除して新しい抽出用語で張り替える。
+- 指定 URL が別の記事として既に登録済みの場合は、既存記事との重複を避けるため更新しない。
+
+#### 2.2.6 記事報告管理 `/admin/reports`
 
 - 未対応の記事報告一覧（報告理由・記事タイトル・要約・報告日時・本家リンク）
 - 「記事を削除」（記事と関連用語紐付けを削除、URL は重複検知用にブラックリスト化）
 - 「記事報告を却下」（記事は残し、記事報告のみクローズ）
 
-#### 2.2.6 不具合報告管理 `/admin/bug-reports`
+#### 2.2.7 不具合報告管理 `/admin/bug-reports`
 
 - 未対応の不具合報告一覧を表示する
 - 表示項目: 報告本文、送信日時、パス、viewport、言語、タイムゾーン、User-Agent、直近エラーログ
@@ -424,6 +433,7 @@ with (security_invoker = true) as ...;
 | GET / POST     | `/api/admin/sources`            | ソース一覧 / 登録              |
 | PATCH / DELETE | `/api/admin/sources/:id`        | ソース更新 / 削除              |
 | POST           | `/api/admin/sources/preview`    | 登録前の初回取り込みプレビュー |
+| POST           | `/api/admin/articles/:id/retry` | 記事の指定URLを再取得して再要約 |
 | GET / POST     | `/api/admin/words`              | 用語一覧（`page` / `limit` ページング） / 追加 |
 | PATCH / DELETE | `/api/admin/words/:id`          | 用語更新 / 削除                |
 | GET            | `/api/admin/reports`            | 記事報告一覧                   |

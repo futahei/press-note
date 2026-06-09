@@ -191,6 +191,79 @@ export async function saveSummarizedArticle({
   return article.id as string;
 }
 
+export async function resummarizeArticle({ articleId, url }: { articleId: string; url?: string }) {
+  const supabase = getServiceSupabase();
+  const { data: article, error: articleError } = await supabase
+    .from("articles")
+    .select("id,source_id,url")
+    .eq("id", articleId)
+    .single();
+  if (articleError) throw articleError;
+
+  const targetUrl = normalizeArticleUrl(url ?? article.url);
+  if (targetUrl !== article.url) {
+    const { data: existingArticle, error: existingError } = await supabase
+      .from("articles")
+      .select("id")
+      .eq("url", targetUrl)
+      .maybeSingle();
+    if (existingError) throw existingError;
+    if (existingArticle && existingArticle.id !== article.id) {
+      throw new Error("同じURLの記事が既に登録されています。");
+    }
+  }
+
+  const summary = await summarizePressReleaseUrl(targetUrl);
+  if (!summary.is_press_release) {
+    throw new Error("指定URLはプレスリリース本文として判定されませんでした。");
+  }
+
+  const { error: updateError } = await supabase
+    .from("articles")
+    .update({
+      url: targetUrl,
+      title: summary.title,
+      summary: summary.summary,
+      published_at: summary.published_at,
+      fetched_at: new Date().toISOString(),
+      is_deleted: false
+    })
+    .eq("id", article.id);
+  if (updateError) throw updateError;
+
+  const { error: deleteTermsError } = await supabase.from("article_terms").delete().eq("article_id", article.id);
+  if (deleteTermsError) throw deleteTermsError;
+
+  for (const term of summary.terms) {
+    const { data: existingTerm, error: existingError } = await supabase
+      .from("terms")
+      .select("id")
+      .eq("headword", term.headword)
+      .maybeSingle();
+    if (existingError) throw existingError;
+
+    const { data: upserted, error: termError } = existingTerm
+      ? { data: existingTerm, error: null }
+      : await supabase
+          .from("terms")
+          .insert({ ...term, source_kind: "ai", status: "published" })
+          .select("id")
+          .single();
+    if (termError) throw termError;
+    await supabase.from("article_terms").upsert({ article_id: article.id, term_id: upserted.id });
+  }
+
+  await logUsage({ purpose: "summarize", sourceId: article.source_id, articleId: article.id, usage: summary.usage });
+
+  return {
+    id: article.id as string,
+    url: targetUrl,
+    title: summary.title,
+    summary: summary.summary,
+    published_at: summary.published_at
+  };
+}
+
 export async function crawlSource(source: Pick<Source, "id" | "name" | "url">, now = new Date()) {
   const supabase = getServiceSupabase();
   const crawlDateWindowDays = 2;

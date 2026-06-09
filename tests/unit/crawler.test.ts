@@ -15,7 +15,7 @@ vi.mock("@/lib/openai", () => ({
   summarizePressReleaseUrl: summarizePressReleaseUrlMock
 }));
 
-import { buildPressReleaseDiscoveryPrompt, crawlSource, isPublishedInJstDateWindow } from "@/lib/crawler";
+import { buildPressReleaseDiscoveryPrompt, crawlSource, isPublishedInJstDateWindow, resummarizeArticle } from "@/lib/crawler";
 
 function createCrawlerSupabaseMock() {
   let articleIndex = 0;
@@ -166,6 +166,95 @@ describe("crawlSource", () => {
     expect(summarizePressReleaseUrlMock).toHaveBeenCalledTimes(1);
     expect(summarizePressReleaseUrlMock).toHaveBeenCalledWith("https://example.com/news/release");
     expect(articleUpsert).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe("resummarizeArticle", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it("summarizes the supplied URL and replaces article fields and term links", async () => {
+    const articleSingle = vi.fn().mockResolvedValue({
+      data: { id: "article-1", source_id: "source-1", url: "https://example.com/old" },
+      error: null
+    });
+    const existingMaybeSingle = vi.fn().mockResolvedValue({ data: null, error: null });
+    const articleUpdateEq = vi.fn().mockResolvedValue({ error: null });
+    const articleUpdate = vi.fn(() => ({ eq: articleUpdateEq }));
+    const articleSelect = vi
+      .fn()
+      .mockReturnValueOnce({ eq: vi.fn(() => ({ single: articleSingle })) })
+      .mockReturnValueOnce({ eq: vi.fn(() => ({ maybeSingle: existingMaybeSingle })) });
+    const articleTermsDeleteEq = vi.fn().mockResolvedValue({ error: null });
+    const articleTermsDelete = vi.fn(() => ({ eq: articleTermsDeleteEq }));
+    const articleTermsUpsert = vi.fn().mockResolvedValue({ error: null });
+    const termMaybeSingle = vi.fn().mockResolvedValue({ data: null, error: null });
+    const termInsertSingle = vi.fn().mockResolvedValue({ data: { id: "term-1" }, error: null });
+    const termInsert = vi.fn(() => ({ select: vi.fn(() => ({ single: termInsertSingle })) }));
+    const usageInsert = vi.fn().mockResolvedValue({ error: null });
+    const from = vi.fn((table: string) => {
+      if (table === "articles") {
+        return { select: articleSelect, update: articleUpdate };
+      }
+      if (table === "article_terms") {
+        return { delete: articleTermsDelete, upsert: articleTermsUpsert };
+      }
+      if (table === "terms") {
+        return {
+          select: vi.fn(() => ({ eq: vi.fn(() => ({ maybeSingle: termMaybeSingle })) })),
+          insert: termInsert
+        };
+      }
+      if (table === "llm_usage_logs") {
+        return { insert: usageInsert };
+      }
+      throw new Error(`Unexpected table: ${table}`);
+    });
+    getServiceSupabaseMock.mockReturnValue({ from });
+    summarizePressReleaseUrlMock.mockResolvedValue({
+      title: "更新後タイトル",
+      summary:
+        "更新後の要約です。対象URLの本文をもとに、発表内容の重要なポイントを自然な日本語で把握できるようにまとめています。",
+      published_at: "2026-06-10T09:00:00+09:00",
+      is_press_release: true,
+      terms: [
+        {
+          headword: "系統用蓄電池",
+          reading: "けいとうようちくでんち",
+          description: "電力系統に接続し、需給調整や再生可能エネルギーの出力変動緩和に使う蓄電池。"
+        }
+      ],
+      usage: { input_tokens: 10, output_tokens: 5, cost_usd: 0 }
+    });
+
+    const result = await resummarizeArticle({
+      articleId: "article-1",
+      url: "https://example.com/new?utm_source=mail#body"
+    });
+
+    expect(summarizePressReleaseUrlMock).toHaveBeenCalledWith("https://example.com/new");
+    expect(articleUpdate).toHaveBeenCalledWith(
+      expect.objectContaining({
+        url: "https://example.com/new",
+        title: "更新後タイトル",
+        summary:
+          "更新後の要約です。対象URLの本文をもとに、発表内容の重要なポイントを自然な日本語で把握できるようにまとめています。",
+        published_at: "2026-06-10T09:00:00+09:00",
+        is_deleted: false
+      })
+    );
+    expect(articleTermsDeleteEq).toHaveBeenCalledWith("article_id", "article-1");
+    expect(termInsert).toHaveBeenCalledWith({
+      headword: "系統用蓄電池",
+      reading: "けいとうようちくでんち",
+      description: "電力系統に接続し、需給調整や再生可能エネルギーの出力変動緩和に使う蓄電池。",
+      source_kind: "ai",
+      status: "published"
+    });
+    expect(articleTermsUpsert).toHaveBeenCalledWith({ article_id: "article-1", term_id: "term-1" });
+    expect(usageInsert).toHaveBeenCalledWith(expect.objectContaining({ purpose: "summarize", article_id: "article-1" }));
+    expect(result.url).toBe("https://example.com/new");
   });
 });
 
