@@ -53,5 +53,11 @@ describe("summarizePressReleaseUrl", () => {
     expect(prompt).toContain("迷う場合は抽出しない");
     expect(prompt).toContain("記事文脈を持ち込まず");
     expect(prompt).toContain("一般語や単独の英語表現は terms に入れない");
+    expect(prompt).toContain("指定URLの本文を確認できない");
+    expect(prompt).toContain("is_press_release=false");
+    expect(prompt).toContain("推定で補わず");
+    expect(prompt).toContain("処理名を title に入れない");
+    expect(prompt).toContain("メタ情報を絶対に含めない");
+    expect(prompt).toContain("文字数");
   });
 });
